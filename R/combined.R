@@ -63,7 +63,7 @@
 
 #' rfint()
 #'
-#' Single wrapper for seven different methods, and their variants, to create random forest prediction intervals. Seven methods currently supported.
+#' Single wrapper for seven different methods, and their variants, to create random forest prediction intervals. More methods to be added.
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
 #' @param train_data Training data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Matches ranger() requirements.
 #' @param test_data Test data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Utilizes ranger::predict() to get prediction intervals for test data.
