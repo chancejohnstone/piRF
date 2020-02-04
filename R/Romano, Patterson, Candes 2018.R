@@ -14,7 +14,7 @@
 ## ---------------------------
 ##
 ## Notes:
-##   
+##
 ##
 ## --------------------------
 
@@ -44,13 +44,14 @@ require(reshape2)
 #' @keywords prediction interval, random forest, boosting
 #' @export
 #' @examples
-#' CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL, 
-#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE, 
+#' CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
+#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
 #' intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL)
-CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL, 
-                  min_node_size = NULL, m_try = NULL, keep_inbag = TRUE, 
+#' @noRd
+CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
+                  min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                   intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL){
-  
+
   #parse formula
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
@@ -59,39 +60,39 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
   } else {
     stop("Error: Please give formula!")
   }
-  
+
   #get dependent variable
   dep <- names(train_data)[1]
-  
+
   if (forest_type == "QRF"){
     quantreg <- TRUE
   } else {quantreg <- FALSE}
-  
+
   #partition train data into I1 and I2
   train <- sample(1:nrow(train_data), floor(nrow(train_data)/2))
   not_test <- 1:nrow(train_data) %in% train
-  
+
   I1 <- train_data[train,]
   I2 <- train_data[!not_test,]
-  
+
   #train on I1
-  rf <- ranger(formula, data = I1, num.trees = num_trees, 
-               min.node.size = min_node_size, mtry = m_try, 
-               keep.inbag = keep_inbag, quantreg = TRUE, 
+  rf <- ranger(formula, data = I1, num.trees = num_trees,
+               min.node.size = min_node_size, mtry = m_try,
+               keep.inbag = keep_inbag, quantreg = TRUE,
                num.threads = num_threads)
- 
-  
+
+
   #get conformity scores for everything in I2
   quant_preds <- predict(rf, I2, type = 'quantiles', quantiles = c(alpha/2, 1 - alpha/ 2), num.threads = num_threads)
-  
+
   E <- cbind(quant_preds$predictions[,1] - I2[,dep], I2[,dep] - quant_preds$predictions[,2])
-  
+
   #collection of conformity scores
   maxE <- apply(E, FUN = max, MARGIN = 1)
-  
+
   preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha/2, 1- alpha/2), num.threads = num_threads)
   Q <- quantile(maxE, probs = 1 - alpha)
   intervals <- cbind(preds$predictions[,1] - Q, preds$predictions[,2] + Q)
-  
+
   return(list(preds = preds, pred_intervals = intervals))
 }

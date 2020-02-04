@@ -21,19 +21,20 @@
 #' @keywords prediction interval, random forest, boosting, BOP
 #' @export
 #' @examples
-HDI_quantregforest <- function(formula = NULL, 
-                               train_data = NULL, 
-                               test_data = NULL, 
+#' @noRd
+HDI_quantregforest <- function(formula = NULL,
+                               train_data = NULL,
+                               test_data = NULL,
                                alpha = NULL,
-                               num_tree = NULL, 
-                               mtry = NULL, 
-                               min_node_size = NULL, 
+                               num_tree = NULL,
+                               mtry = NULL,
+                               min_node_size = NULL,
                                max_depth = NULL,
                                replace = TRUE,
                                verbose = FALSE,
                                num_threads = NULL,
                                ...){
-  
+
   ## sort the response of training data by ascending order
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
@@ -41,68 +42,68 @@ HDI_quantregforest <- function(formula = NULL,
   } else {
     stop("Error: Please give formula!")
   }
-  
+
   ## Some checks of inputs (inherited from quantregforest package)
   if(! class(train_data[,1]) %in% c("numeric","integer") )
     stop("The response must be numeric ")
-  
+
   if(is.null(nrow(train_data[,-1])) || is.null(ncol(train_data[,-1])))
     stop("The training data contains no data ")
-  
+
   if(is.null(nrow(test_data)) || is.null(ncol(test_data)))
     stop("The test data contains no data ")
 
   if (any(is.na(train_data))) stop("NA not permitted in the training data")
   if (any(is.na(test_data))) stop("NA not permitted in the test data")
-  
+
   ## train a random forest via ranger
-  rf <- ranger:::ranger(formula = formula, 
-                        data = train_data, 
-                        num.trees = num_tree, 
+  rf <- ranger:::ranger(formula = formula,
+                        data = train_data,
+                        num.trees = num_tree,
                         mtry = mtry,
-                        min.node.size = min_node_size, 
-                        max.depth = max_depth, 
+                        min.node.size = min_node_size,
+                        max.depth = max_depth,
                         replace = replace,
-                        sample.fraction = ifelse(replace, 1, 0.632), 
+                        sample.fraction = ifelse(replace, 1, 0.632),
                         keep.inbag = TRUE,
                         num.threads = num_threads)
-  
+
   ## extract inbag and terminalnode matrices
   inbag <- rf$inbag.counts
   train_node <- predict(rf, train_data, type = "terminalNodes", num.threads = num_threads)$predictions
   test_node <- predict(rf, test_data, type = "terminalNodes", num.threads = num_threads)$predictions
-  
+
   ## Compute random forest weights for test instances
   n_train <- nrow(train_data)
   n_test <- nrow(test_data)
   test_weights <- list()
-  
+
   pred_int <- data.frame(matrix(nrow = n_test, ncol = 2))
   colnames(pred_int) <- c("lower", "upper")
   rownames(pred_int) <- rownames(test_data)
-  
+
   for (ind in 1:n_test) {
-    
+
     weight = rep(0, n_train)
-    
+
     for (tree in 1:num_tree) {
-      
+
       node_match <- which(train_node[, tree] == test_node[ind, tree])
-      
+
       weight[node_match] <- weight[node_match] + inbag[[tree]][node_match] / sum(inbag[[tree]][node_match])
     }
-    
+
     weight <- weight / num_tree
-    
+
     test_weights[[ind]] <- weight
-    
+
     lower_index <- 1
     upper_index <- 0
     prob <- 0
     lower_bound <- min(train_data[,1])
     upper_bound <- max(train_data[,1])
     interval_width <- upper_bound - lower_bound
-    
+
     ## Find the narrowest interval under the coverage constraint
     for (lower_index in 1:n_train) {
       while (upper_index < n_train & prob < 1- alpha) {
@@ -121,24 +122,24 @@ HDI_quantregforest <- function(formula = NULL,
       }
       prob <- prob - weight[lower_index]
     }
-    
+
     pred_int$lower[ind] <- lower_bound
     pred_int$upper[ind] <- upper_bound
-    
+
     if (verbose == TRUE) {
       print(pred_int[ind,])
     }
-      
+
   }
 
-  return(list(pred_intervals = pred_int, test_weights = test_weights))  
+  return(list(pred_intervals = pred_int, test_weights = test_weights))
 }
 
 ## Test HDI_quantregforest function
 #library(rfinterval)
 
-#HDI_quantregforest(pm2.5~.,train_data = BeijingPM25[1:8000,], 
-#                   test_data = BeijingPM25[8001:8661,], 
-#                   alpha = 0.05,num_tree = 500, mtry = 8, 
+#HDI_quantregforest(pm2.5~.,train_data = BeijingPM25[1:8000,],
+#                   test_data = BeijingPM25[8001:8661,],
+#                   alpha = 0.05,num_tree = 500, mtry = 8,
 #                   min_node_size = 5, max_depth = 10,
 #                   replace = TRUE,verbose = TRUE)
