@@ -134,7 +134,6 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
   #tracking list
   for(m in method){
     id <- m
-    print(paste0("Generating prediction intervals using ", m, " methodology..."))
 
     if(m == "Zhang"){
       #Zhang call
