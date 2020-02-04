@@ -81,9 +81,9 @@
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
 #' @param concise Predictions for each method output in addition to intervals. Defaults to FALSE.
 #' @keywords prediction interval, random forest, boosting
-#' @import parallel
-#' @import rfinterval
-#' @import ranger
+#' @importFrom parallel detectCores
+#' @importFrom rfinterval rfinterval
+#' @importFrom ranger ranger predict.ranger
 #' @export
 #' @examples
 #' library(piRF)
