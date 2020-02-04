@@ -73,6 +73,7 @@
 #' @export
 #' @examples
 #' calibrate <- function(oob, alpha = alpha, response_data, dep, tolerance = .025)
+#' @noRd
 calibrate <- function(oob, alpha = .1, response_data, tolerance = .025,
                       step_percent = .618, under = TRUE, method = "quantile",
                       max_iter = 10) {
