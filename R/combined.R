@@ -27,11 +27,7 @@
 ##
 ## add in error messages; take HDI_quantregforest messages as start...
 ##
-## need to adjust Simulation_Execution.R to use this function
-##
 ## Tung methodology very slow...
-##
-## fix alphas
 ## --------------------------
 
 #source mean functions, var functions, data generating functions, all others...
@@ -83,7 +79,7 @@
 #' @keywords prediction interval, random forest, boosting
 #' @importFrom parallel detectCores
 #' @importFrom rfinterval rfinterval
-#' @importFrom ranger ranger
+#' @importFrom ranger ranger predict.ranger
 #' @export
 #' @examples
 #' library(piRF)
@@ -186,7 +182,7 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
       #need to do this with predict for quantReg with ranger
       int[[id]] <- predict(res, test, type = "quantiles", quantiles = c(alpha/2, 1 - alpha/2))$predictions
     } else {
-      print(paste0("Error: ", m, " is not a supported random forest prediction interval methodology"))
+      stop(paste0(m, " is not a supported random forest prediction interval methodology"))
     }
 
     colnames(int[[id]]) <- c("lower", "upper")
