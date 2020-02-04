@@ -83,7 +83,7 @@
 #' @keywords prediction interval, random forest, boosting
 #' @importFrom parallel detectCores
 #' @importFrom rfinterval rfinterval
-#' @importFrom ranger ranger predict.ranger
+#' @importFrom ranger ranger
 #' @export
 #' @examples
 #' library(piRF)

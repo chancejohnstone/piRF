@@ -61,7 +61,7 @@ rfint(
 \item{variant}{Choose which variant to use. Currently variant 2 not implemented.}
 }
 \description{
-Single wrapper for seven different methods, and their variants, to create random forest prediction intervals. Seven methods currently supported.
+Single wrapper for seven different methods, and their variants, to create random forest prediction intervals. More methods to be added.
 }
 \examples{
 library(piRF)
