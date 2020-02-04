@@ -81,6 +81,9 @@
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
 #' @param concise Predictions for each method output in addition to intervals. Defaults to FALSE.
 #' @keywords prediction interval, random forest, boosting
+#' @import parallel
+#' @import rfinterval
+#' @import ranger
 #' @export
 #' @examples
 #' library(piRF)
@@ -125,9 +128,9 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
                   Tung_R = 5, Tung_num_trees = 75, Ghosal_variant = 1, concise = FALSE, prop = .632){
 
   #required libraries
-  require(parallel)
-  require(rfinterval)
-  require(ranger)
+  #require(parallel)
+  #require(rfinterval)
+  #require(ranger)
 
   #list for all intervals; just gets all output for each interval
   int <- list()
