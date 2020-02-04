@@ -88,9 +88,9 @@
 #' @examples
 #' library(piRF)
 #'
-#' getPILength <- function(PI){
+#' getPILength <- function(x){
 #' #average PI length across each set of predictions
-#' l <- PI[,2] - PI[,1]
+#' l <- x[,2] - x[,1]
 #' avg_l <- mean(l)
 #' return(avg_l)
 #' }
