@@ -14,17 +14,13 @@
 ## ---------------------------
 ##
 ## Notes:
-## implementing boosted random forest, not specifically the alternative boosted forest described in Ghosal, Hooker 2018
-## working to implementing alternative forest method
-## multiple boosts functional
-## need to add variant 2 and fix variance issues
-## changed genRF function genCombRF
-## adding in roxygen2 documentation
+## multiple boosts functional; testing needs to occur; seems to be an issue with variance estimates
+## variant 2 implemented
 ## --------------------------
 
-require(ranger)
-require(dplyr)
-require(reshape2)
+#require(ranger)
+#require(dplyr)
+#require(reshape2)
 
 #' implements RF prediction interval method in Ghosal, Hooker 2018
 #'
@@ -40,7 +36,7 @@ require(reshape2)
 #' @param alpha Significance level for prediction intervals.
 #' @param prop Proportion of training data to sample for each tree. Currently variant 2 not implemented.
 #' @param variant Choose which variant to use. Currently variant 2 not implemented.
-#' @param num-stages Number of boosting stages. Functional for >= 2; variance estimates need adjustment for variant 2.
+#' @param num_stages Number of boosting stages. Functional for >= 2; variance estimates need adjustment for variant 2.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
 #' @keywords prediction interval, random forest, boosting
 #' @export
@@ -51,6 +47,40 @@ require(reshape2)
 #' replace = TRUE, prop = 1, variant = 1,
 #' num_threads = num_threads)
 #' @noRd
+
+###testing###
+library(ranger)
+source("C:/Users/thechanceyman/Documents/RFIntervals/R/Simulation Functions.R")
+
+#n <- 100
+#ratio <- 2/3
+#p <- 10
+#full_n <- n*1/ratio
+#x_data <- data_gen(full_n)
+#colnames(x_data) <- paste0("X", 1:p)
+#response <- linear_func(x_data) + rnorm(full_n, 0, 1)
+#full_data <- cbind(response, x_data)
+
+#train/test datasets
+#subset <- sample(1:full_n, size = round(ratio*full_n))
+#train <- as.data.frame(full_data[subset,])
+#test <- as.data.frame(full_data[-subset,])
+
+#formula <- response ~.
+#train_data <- train
+#pred_data <- test
+#num_trees <- 500
+#min_node_size <- NULL
+#m_try <- NULL
+#keep_inbag <- TRUE
+#intervals <- FALSE
+#alpha <- .1
+#prop <- .66
+#variant <- 2
+#num_threads <- NULL
+#num_stages <- 5
+###
+
 GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                           min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                           intervals = FALSE, alpha = NULL, prop = NULL, variant = 1,
@@ -59,8 +89,6 @@ GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, n
   #parse formula
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
-    #orders train_data by response
-    #train_data <- train_data[order(train_data[,1]), ]
   } else {
     stop("Error: Please give formula!")
   }
@@ -75,14 +103,13 @@ GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, n
               m_try = m_try, weights = NULL, importance = "none",
               prop = prop, num_threads = num_threads)
 
-  #call boosting function; adding in variants?
+  #call boosting function
   boostRF <- boostStage(rf, formula = formula, train_data = train_data, pred_data = pred_data, num_trees = num_trees,
                         min_node_size = min_node_size, m_try = m_try, keep_inbag = TRUE,
-                        intervals = TRUE,
-                        alpha = alpha, weights = NULL, num_stages = 2,
-                        prop = prop, num_threads = num_threads)
+                        intervals = TRUE, alpha = alpha, weights = NULL, num_stages = num_stages,
+                        prop = prop, num_threads = num_threads, variant = variant)
 
-  #get intervals; do we need to include other stuff? not right now maybe...
+  #get intervals
   intervals <- GHVar(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads)
 }
 
@@ -120,18 +147,12 @@ genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_t
 #' @keywords cats
 #' @export
 #' @examples
-#' boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
-#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-#' intervals = TRUE,
-#' alpha = alpha, forest_type = forest_type, weights = NULL, num_stages = 2,
-#' replace = replace, prop = prop, quantreg = TRUE, num_threads = num_threads)
 #' @noRd
 #boosting function
 boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
                        min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-                       intervals = TRUE,
-                       alpha = alpha, weights = NULL, num_stages = 2,
-                       prop = prop, num_threads = num_threads){
+                       intervals = TRUE, alpha = alpha, weights = NULL, num_stages = 2,
+                       prop = prop, num_threads = num_threads, variant = NULL){
 
   #get dependent variable
   dep <- names(train_data)[1]
@@ -154,8 +175,17 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
   rf_sum_intervals <- 0
 
   #get inbag list from initial rf
+  #change inbag base don variant
   inbag_list <- rf$inbag.counts
-  for(i in 1:num_boost){
+  if(variant == 1){
+    inbag_list <- rf$inbag.counts
+  } else {
+    inbag_list <- NULL
+  }
+
+  #change so that the original rf is i == 1...
+  boost_list[[1]] <- rf
+  for(i in 2:num_stages){
     aug_train_data <- cbind(resids, train_data[,!drop])
 
     rf2 <- genCombRF(formula = bias ~. , train_data = aug_train_data,
@@ -171,16 +201,20 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
 
     #train_data predictions for MSE estimate
     train_rf_sum <- train_rf_sum + predict(boost_list[[i]], train_data, num.threads = num_threads)$predictions
-    #combine original RF with boosted
+
+    #combine original RF predictions with boosted predictions
     train_preds <- predict(rf, train_data, num.threads = num_threads)$predictions + train_rf_sum
 
-    #need to sum all of the predictions from every boosted forest...
+    #sum all of the predictions from every boosted forest...
     rf_sum <- rf_sum + predict(boost_list[[i]], pred_data, num.threads = num_threads)$predictions
     preds <- predict(rf, pred_data, num.threads = num_threads)$predictions + rf_sum
+    #preds <- rf_sum
 
-    #need to get every tree prediction
+
+    #get every tree prediction
     tree_rf_sum <- tree_rf_sum + predict(boost_list[[i]], pred_data, predict.all = TRUE, num.threads = num_threads)$predictions
     tree_preds <- predict(rf, pred_data, predict.all = TRUE, num.threads = num_threads)$predictions + tree_rf_sum
+    #tree_preds <- tree_rf_sum
 
     #get bias of new predictions
     resids <- preds - pred_data[dep]
@@ -188,7 +222,6 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
 
   }
 
-  #return(list(stage1rf = rf, boostrf = boost_list, preds = preds, pred_intervals = pred_intervals))
   return(list(stage1rf = rf, boostrf = boost_list,
               preds = preds, tree_preds = tree_preds, train_preds = train_preds,
               inbag = rf$inbag.counts))
@@ -207,6 +240,9 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
 GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads){
   #add variance estimate procedure for variant 2; requires estimates, and inbag for each stage...
 
+  #includes original rf
+  num_stages <- length(boostRF$boostrf)
+
   n <- nrow(train_data)
   pred_n <- nrow(pred_data)
 
@@ -216,30 +252,61 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
   cov_est <- rep(0, times = pred_n)
 
   #needs to get predictions from boostRF
+  #maybe call this something different
   tree_preds <- boostRF$tree_preds
   num_trees <- ncol(tree_preds)
 
-  #getting in bag binary for each test point
-
   #test this; dont know which one is correct...
   in_bag <- unlist(boostRF$inbag)
-  #dim(in_bag) <- c(num_trees, dim(train_data)[1])
-  #in_bag <- t(in_bag)
   dim(in_bag) <- c(dim(train_data)[1], num_trees)
   in_bag <- in_bag >= 1
 
-  for(i in 1:pred_n){
-    sum_cov <- 0
-    for(j in 1:n){
-      sum_cov <- sum_cov + cov(in_bag[j,], tree_preds[i,])^2
+  if(variant == 1){
+    for(i in 1:pred_n){
+      sum_cov <- 0
+      for(j in 1:n){
+        sum_cov <- sum_cov + cov(in_bag[j,], tree_preds[i,])^2
+      }
+
+      #get a variance estimate for each prediction point
+      cov_est[i] <- sum_cov
+    }
+  } else {
+    tree_preds <- array(0, dim = c(pred_n, num_trees, num_stages))
+    for(k in 1:num_stages){
+      tree_preds[,,k] <- predict(boostRF$boostrf[[k]], pred_data, predict.all = TRUE, num.threads = num_threads)$predictions
     }
 
-    #get a variance estimate for each prediction point
-    cov_est[i] <- sum_cov
+    #pretty slow...
+    for(i in 1:pred_n){
+      keep_cov <- 0
+      for(j in 1:n){
+        sum_cov <- 0
+        for(k in 1:num_stages){
+          #get inbag for each stage; maybe dont have to do this every time?
+          in_bag <- unlist(boostRF$boostrf[[k]]$inbag)
+          dim(in_bag) <- c(dim(train_data)[1], num_trees)
+          in_bag <- in_bag >= 1
 
+          #covariance for each stage
+          sum_cov <- sum_cov + cov(in_bag[j,], tree_preds[i,,k])
+        }
+      keep_cov <- keep_cov + sum_cov^2
+      }
+      cov_est[i] <- keep_cov
+    }
   }
 
-  tree_var_est <- apply(tree_preds, FUN = var, MARGIN = 1)
+  #tree preds different size matrix depending on variant
+  if(variant == 1){
+    #variance of tree predictions
+    tree_var_est <- apply(tree_preds, FUN = var, MARGIN = 1)
+  } else {
+    #summing variances of each stages tree predictions...
+    tree_var_est <- apply(apply(tree_preds, FUN = var, MARGIN = c(1,3)), FUN = sum, MARGIN = 1)
+  }
+
+  #overall variance estimate
   var_est <- cov_est + tree_var_est/num_trees
 
   pred_intervals <- NULL
@@ -249,9 +316,6 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
 
   pred_intervals <- cbind(boostRF$preds + qnorm(alpha/2)*sqrt(var_est + mse_est),
                           boostRF$preds - qnorm(alpha/2)*sqrt(var_est + mse_est))
-
-  #return(list(pred_intervals = pred_intervals, tree_var_est = tree_var_est, var_est = var_est, cov_est = cov_est,
-  #            mse = mse_est, tree = tree_preds, inbag = in_bag, all_cov = NULL, trees = num_trees))
 
   return(list(preds = boostRF$preds, pred_intervals = pred_intervals, var_est = var_est,
               mse = mse_est))

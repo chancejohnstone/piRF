@@ -15,14 +15,14 @@
 ##
 ## Notes:
 ##
-##using original random forest implementation through ranger to implement methods proposed in paper.
-##alternative splitting methods and prediction interval methods outlined in paper, not currently implemented
+## using original random forest implementation through ranger to implement methods proposed in paper.
+## alternative splitting methods and prediction interval methods outlined in paper, not currently implemented
 ##
 ## --------------------------
 
-require(ranger)
-require(dplyr)
-require(reshape2)
+#require(ranger)
+#require(dplyr)
+#require(reshape2)
 
 #' implements RF prediction interval method in Roy, Larocque 2019.
 #' Currently implemented is the quantile method with BOP intervals.
@@ -51,6 +51,9 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
                   tolerance = NULL, step_percent = NULL, under = NULL, method = NULL,
                   max_iter = NULL){
 
+  #garbage collection
+  #gc()
+
   #parse formula
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
@@ -70,7 +73,8 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   if (intervals) {
 
     #get BOP for each new prediction
-    all_BOP <- genBOP(rf, train_data = train_data, pred_data = pred_data, alpha = alpha, num_threads = num_threads)
+    all_BOP <- genBOP(rf, train_data = train_data, pred_data = pred_data,
+                      alpha = alpha, num_threads = num_threads, calibrate = calibrate)
     BOP <- all_BOP$BOP
     oobBOP <- all_BOP$oobBOP
     dep <- all_BOP$dep
@@ -111,7 +115,9 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #maybe we could separate this into a genOOB function vs. a genBOP function?
 #allows for use elsewhere...
 #seems that this function is very slow...
-genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha, pred_data, train_data, num_threads = num_threads){
+genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
+                   pred_data, train_data, num_threads = num_threads,
+                   calibrate = calibrate){
 
   #pred_data <- train_data
   npred <- dim(pred_data)[1]
@@ -137,7 +143,13 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha, pred_data, train_
   #need to oobBOP for train_data, not just pred_data
   BOP <- list()
   oobBOP <- list()
-  for (i in 1:npred) {
+
+  ###this needs to be done in parallel
+  #library(doParallel)
+  #setting up in parallel
+  #start <- Sys.time()
+
+  BOP <- foreach(i = 1:npred) %dopar% {
     #terminal node within each tree; compare to trees of training data only
     pred_nodes <- term_nodes[i,]
     pred_same <- term_nodes[(npred+1):ntotal,] == pred_nodes
@@ -154,28 +166,39 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha, pred_data, train_
     #combine into one collection of BOP values for each new data point
     unq_dep_vals <- unlist(apply(dep_vals, FUN = unique, MARGIN = 2))
     #oob_unq_dep_vals <- unlist(apply(oob_dep_vals, FUN = unique, MARGIN = 2))
-    BOP[[i]] <- unq_dep_vals[is.na(unq_dep_vals) == FALSE]
+    BOP <- unq_dep_vals[is.na(unq_dep_vals) == FALSE]
     #oobBOP[[i]] <- oob_unq_dep_vals[is.na(oob_unq_dep_vals) == FALSE]
+    BOP
   }
 
   ntrain <- dim(train_data)[1]
-  for (j in 1:ntrain) {
-    #terminal node within each tree; compare to trees of training data only
-    pred_nodes <- term_nodes[(npred+j),]
-    pred_same <- term_nodes[(npred+1):ntotal,] == pred_nodes
-    pred_same[pred_same == FALSE] <- NA
 
-    #get matching dependent variable values; doing oob as well
-    hold <- as.vector(train_data[dep][,1])
-    dep_rep <- matrix(hold, ncol=B, nrow=length(hold), byrow=FALSE)
-    oob_rep <- matrix(oob[j,], ncol=B, nrow=length(hold), byrow=TRUE)
-    oob_dep_vals <- dep_rep * pred_same * oob_rep
+  #computationally expensive with large train dataset
+  #allow for a subsample to be random selected instead of oobBOP being generated for each train observation
+  if(calibrate){
+    oobBOP <- foreach(j = 1:ntrain) %dopar% {
+      #terminal node within each tree; compare to trees of training data only
+      pred_nodes <- term_nodes[(npred+j),]
+      pred_same <- term_nodes[(npred+1):ntotal,] == pred_nodes
+      pred_same[pred_same == FALSE] <- NA
 
-    #get unique node values from each bag;
-    #combine into one collection of BOP values for each new data point
-    oob_unq_dep_vals <- unlist(apply(oob_dep_vals, FUN = unique, MARGIN = 2))
-    oobBOP[[j]] <- oob_unq_dep_vals[is.na(oob_unq_dep_vals) == FALSE]
-  }
+      #get matching dependent variable values; doing oob as well
+      hold <- as.vector(train_data[dep][,1])
+      dep_rep <- matrix(hold, ncol=B, nrow=length(hold), byrow=FALSE)
+      oob_rep <- matrix(oob[j,], ncol=B, nrow=length(hold), byrow=TRUE)
+      oob_dep_vals <- dep_rep * pred_same * oob_rep
+
+      #get unique node values from each bag;
+      #combine into one collection of BOP values for each new data point
+      oob_unq_dep_vals <- unlist(apply(oob_dep_vals, FUN = unique, MARGIN = 2))
+      oobBOP <- oob_unq_dep_vals[is.na(oob_unq_dep_vals) == FALSE]
+      oobBOP
+    }
+  } else {oobBOP <- NULL}
+
+  #end <- Sys.time()
+  #print(difftime(end,start, units = "secs"))
+  #print(BOP)
 
   return(list(BOP = BOP, oobBOP = oobBOP, dep = dep))
 }

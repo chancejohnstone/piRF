@@ -17,11 +17,12 @@
 ## Notes:
 ##
 ## include options for different number of trees in the featureBias vs predBias step?
+## make parallel; optimize when parallel is used vs not, based on R value...
 ## --------------------------
 
-require(ranger)
-require(dplyr)
-require(reshape2)
+#require(ranger)
+#require(dplyr)
+#require(reshape2)
 
 #' implements RF prediction interval method in Tung, Huang, Nyugen, Khan 2014.
 #'
@@ -55,6 +56,10 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
                     intervals = TRUE, feature_num_trees = NULL,
                     alpha = NULL, forest_type = "QRF", featureBias = TRUE, predictionBias = TRUE, R = NULL,
                     num_threads = NULL){
+  
+  #garbage collection
+  gc()
+  
   #parse formula
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
@@ -105,7 +110,15 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
                   alpha = alpha, forest_type = "RF", importance = "none" , weights = NULL, num_threads = num_threads){
 
   #why does genRF need pred_data? it shouldn't if it is just generating a forest?
-
+  #parse formula
+  if (!is.null(formula)) {
+    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
+    #orders train_data by response
+    #train_data <- train_data[order(train_data[,1]), ]
+  } else {
+    stop("Error: Please give formula!")
+  }
+  
   if (forest_type == "QRF"){
     quantreg <- TRUE
   } else {quantreg <- FALSE}
@@ -137,9 +150,9 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
   #adjust this; currently includes an artifical response...
   vi <- matrix(0, nrow = R, ncol = dim(train_data)[2]*2-1)
   n <- dim(train_data)[1]
-
+  
   #sample from training data within a feature; R replications
-  for (i in 1:R){
+  vi <- foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger")) %dopar% {
     #need to remove dependent variable?
     artif_features[[i]] <- apply(train_data, FUN = sample, MARGIN = 2, size = n, replace = FALSE)
     colnames(artif_features[[i]]) <- paste0("a_", names(train_data))
@@ -153,8 +166,11 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
                      num_trees = feature_num_trees, min_node_size = min_node_size,
                      m_try = m_try, forest_type = "QRF", importance = "permutation",
                      num_threads = num_threads)$variable.importance
+    #return the variable importance
+    vi
   }
-
+  
+  vi
   #get VI_hat
   vi_hat_all <- apply(vi, FUN = mean, MARGIN = 2)
   vi_hat <- vi_hat_all[1:(dim(train_data)[2]-1)]
@@ -185,10 +201,19 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
 
   #calibrate unused currently; implemented for QRF so foresttype not neccessary
   #generalize for RF?
-
+  #parse formula
+  if (!is.null(formula)) {
+    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
+    #orders train_data by response
+    #train_data <- train_data[order(train_data[,1]), ]
+  } else {
+    stop("Error: Please give formula!")
+  }
+  
   #get dependent variable
   dep <- names(train_data)[1]
-
+  #print(dep)
+  
   #keeping inbag by default; get oob for each tree
   #getting oob index for each training data point
   oob <- unlist(rf$inbag.counts)

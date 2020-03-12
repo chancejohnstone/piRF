@@ -1,6 +1,6 @@
 ## ---------------------------
 ##
-## Script name: RF Interval Generation
+## Script name: rfint()
 ##
 ## potential package names: prRFer, prRFect, RFPRInter, PrInterRF, piRF
 ##
@@ -20,14 +20,13 @@
 ## allows for multiple methods to be chosen at once, but not multiple significance levels
 ## just does one set at a time, with predictions
 ##
-## need to fix formula parsing formula issues...
-##
-## outputs everything from each method, not just the intervals
-## lots of stuff needs to be cleaned/organized/consolidated/other adjective
-##
 ## add in error messages; take HDI_quantregforest messages as start...
 ##
 ## Tung methodology very slow...
+##
+## better way to adjust options for different methods... options list?
+## need to do this so we have more control over each function; calibrate0() for example...
+## add details section
 ## --------------------------
 
 #source mean functions, var functions, data generating functions, all others...
@@ -64,22 +63,30 @@
 #' @param train_data Training data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Matches ranger() requirements.
 #' @param test_data Test data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Utilizes ranger::predict() to get prediction intervals for test data.
 #' @param method Choose what method to generate RF prediction intervals. ("Zhang", "quantile", "Romano", "Ghosal", "Roy", "Tung", "HDI). Defaults to "Zhang".
-#' @param num_trees Number of trees.
+#' @param alpha Significance level for prediction intervals.
+#' @param concise If TRUE, only predictions output. Defaults to FALSE
+#' @param seed Seed for random number generation. Currently not utilized.
+#' @param num_trees Number of trees used in the random forest.
 #' @param min_node_size Minimum number of observations before split at a node.
 #' @param m_try Number of variables to randomly select from at each split.
-#' @param keep_inbag Saves matrix of observations and which tree(s) they occur in. Required to be true to generate variance estimates for Ghosal, Hooker 2018 method. *Should not be an option...
-#' @param intervals Generate prediction intervals or not.
-#' @param alpha Significance level for prediction intervals.
-#' @param forest_type Determines what type of forest: regression forest vs. quantile regression forest. *Should not be an option...
 #' @param replace Sample with replacement, or not. Utilized for the two different variants outlined in Ghosal, Hooker 2018. Currently variant 2 not implemented.
 #' @param prop Proportion of training data to sample for each tree. Currently variant 2 not implemented.
-#' @param variant Choose which variant to use. Currently variant 2 not implemented.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @param concise Predictions for each method output in addition to intervals. Defaults to FALSE.
-#' @keywords prediction interval, random forest, boosting
+#' @param symmetry True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only Zhang method. Defaults to TRUE.
+#' @param calibrate If TRUE, intervals calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for method = "Roy".
+#' @param variant Choose which variant to use. Only for method = "Ghosal". Currently variant 2 not implemented.
+#' @param Ghosal_num_stages Number of total stages. Only for method = "Ghosal".
+#' @param featureBias Remove feature bias. Only for method = "Tung".
+#' @param predictionBias Remove prediction bias. Only for method = "Tung".
+#' @param TungR Number of repetitions used in bias removal. Only for method = "Tung".
+#' @param Tung_num_trees Number of trees used in bias removal. Only for method = "Tung".
+#' @section Values
+#' @keywords prediction interval, random forest, boosting, calibration
 #' @importFrom parallel detectCores
 #' @importFrom rfinterval rfinterval
-#' @importFrom ranger ranger predict.ranger
+#' @import ranger
+#' @importFrom MASS ginv
+#' @import doParallel
 #' @export
 #' @examples
 #' library(piRF)
@@ -118,85 +125,124 @@
 #' length <- sapply(res, FUN = getPILength)
 #' length
 rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method = "Zhang", alpha = 0.1,
-                  Zhang_method = "oob", symmetry = TRUE, seed = NULL,
-                  m_try = 2, num_trees = 500, min_node_size = 5, num_threads = detectCores(),
-                  calibrate = FALSE, featureBias = TRUE, predictionBias = TRUE,
-                  Tung_R = 5, Tung_num_trees = 75, Ghosal_variant = 1, concise = FALSE, prop = .632){
+                  symmetry = TRUE, seed = NULL, m_try = 2, num_trees = 500,
+                  min_node_size = 5, num_threads = detectCores(),
+                  calibrate = FALSE, Roy_method = "quantile", featureBias = TRUE, predictionBias = TRUE,
+                  Tung_R = 5, Tung_num_trees = 75, variant = 1, Ghosal_num_stages = 2, prop = .618,
+                  concise = TRUE, ...){
 
   #required libraries
   #require(parallel)
   #require(rfinterval)
   #require(ranger)
 
+  if(is.null(num_threads)){
+    num_threads <- detectCores()
+  } else {
+    num_threads = num_threads
+  }
+
+  if(getDoParWorkers() != num_threads){
+    clust <- makeCluster(num_threads)
+    registerDoParallel(clust)
+  }
+
   #list for all intervals; just gets all output for each interval
+  res <- list()
   int <- list()
+  pred <- list()
 
   #tracking list
-  for(m in method){
-    id <- m
-
-    if(m == "Zhang"){
+  for(id in method){
+    if(id == "Zhang"){
       #Zhang call
-      int[[id]] <- rfinterval(formula = formula, train_data = train, test_data = test,
-                        method = Zhang_method, alpha = alpha, symmetry = symmetry, seed = seed,
+      res[[id]] <- rfinterval(formula = formula, train_data = train, test_data = test,
+                        method = "oob", alpha = alpha, symmetry = symmetry, seed = seed,
                         params_ranger = list(mtry = m_try, num.trees = num_trees, min.node.size = min_node_size,
-                                             num.threads = num_threads))$oob_interval
-    } else if (m == "Roy"){
+                                             num.threads = num_threads))
+      pred[[id]] <- res[[id]]$testPred
+      int[[id]] <- res[[id]]$oob_interval
+    } else if (id == "Roy"){
       #Roy, Larocque call
-      int[[id]] <- RoyRF(formula = formula, train_data = train, pred_data = test, intervals = TRUE,
-                   interval_type = "quantile", alpha = alpha, num_trees = num_trees,
-                   num_threads = num_threads, m_try = m_try)$pred_intervals
-    } else if (m == "Ghosal"){
+      res[[id]] <- RoyRF(formula = formula, train_data = train, pred_data = test, intervals = TRUE,
+                   interval_type = Roy_method, alpha = alpha, num_trees = num_trees,
+                   num_threads = num_threads, m_try = m_try)
+
+      pred[[id]] <- res[[id]]$preds
+      int[[id]] <- res[[id]]$pred_intervals
+    } else if (id == "Ghosal"){
       #Ghosal, Hooker call
-      int[[id]] <- GhosalBoostRF(formula = formula, train_data = train, pred_data = test, num_trees = num_trees,
+      res[[id]] <- GhosalBoostRF(formula = formula, train_data = train, pred_data = test, num_trees = num_trees,
                            min_node_size = min_node_size, m_try = m_try, keep_inbag = TRUE,
                            intervals = TRUE, alpha = alpha, prop = prop,
-                           variant = Ghosal_variant, num_threads = num_threads)$pred_intervals
-    } else if (m == "Tung"){
+                           variant = variant, num_threads = num_threads, num_stages = Ghosal_num_stages)
+
+      pred[[id]] <- res[[id]]$preds
+      int[[id]] <- res[[id]]$pred_intervals
+    } else if (id == "Tung"){
       #Tung call
-      int[[id]] <- TungUbRF(formula = formula, train_data = train, pred_data = test,
+      res[[id]] <- TungUbRF(formula = formula, train_data = train, pred_data = test,
                       num_trees = num_trees, feature_num_trees = Tung_num_trees,
                       min_node_size = min_node_size, m_try = m_try, alpha = alpha, forest_type = "QRF",
                       featureBias = featureBias, predictionBias = predictionBias,
-                      R = Tung_R, num_threads = num_threads)$pred_intervals
-    } else if (m == "Romano"){
+                      R = Tung_R, num_threads = num_threads)
+
+      pred[[id]] <- res[[id]]$preds
+      int[[id]] <- res[[id]]$pred_intervals
+    } else if (id == "Romano"){
       #Romano, Candes call
-      int[[id]] <- CQRF(formula = formula, train_data = train, pred_data = test,
+      res[[id]] <- CQRF(formula = formula, train_data = train, pred_data = test,
                   num_trees = num_trees, min_node_size = min_node_size,
                   m_try = m_try, keep_inbag = TRUE, intervals = TRUE,
-                  num_threads = num_threads, alpha = alpha)$pred_intervals
-    } else if (m == "HDI"){
+                  num_threads = num_threads, alpha = alpha)
+
+      pred[[id]] <- res[[id]]$preds
+      int[[id]] <- res[[id]]$pred_intervals
+    } else if (id == "HDI"){
       #HDI forest call
-      int[[id]] <- HDI_quantregforest(formula = formula,train_data = train, test_data = test,
+      res[[id]] <- HDI_quantregforest(formula = formula,train_data = train, test_data = test,
                                 alpha = alpha, num_tree = num_trees, mtry = m_try,
                                 min_node_size = min_node_size, max_depth = 10,
-                                replace = TRUE, verbose = FALSE, num_threads = num_threads)$pred_intervals
-    } else if (m == "quantile"){
+                                replace = TRUE, verbose = FALSE, num_threads = num_threads)
+
+      pred[[id]] <- res[[id]]$preds
+      int[[id]] <- res[[id]]$pred_intervals
+    } else if (id == "quantile"){
       #quantile RF call
       #intermediate step to get quantReg model
-      res <- ranger(formula = formula, data = train,
+      res[[id]] <- ranger(formula = formula, data = train,
                     num.trees = num_trees, mtry = m_try, min.node.size = min_node_size,
                     quantreg = TRUE, num.threads = num_threads)
 
       #need to do this with predict for quantReg with ranger
-      int[[id]] <- predict(res, test, type = "quantiles", quantiles = c(alpha/2, 1 - alpha/2))$predictions
+      pred[[id]] <- predict(res[[id]], test, type = "quantiles", quantiles = c(alpha/2, 0.5, 1 - alpha/2))$predictions
+      int[[id]] <- pred[[id]][,c(1,3)]
+      #save only median
+      pred[[id]] <- pred[[id]][,2]
     } else {
-      stop(paste0(m, " is not a supported random forest prediction interval methodology"))
+      stop(paste0(id, " is not a supported random forest prediction interval methodology"))
     }
 
     colnames(int[[id]]) <- c("lower", "upper")
-
-    if(!concise) {
-      #output preds
-      #not implemented
-    }
   }
 
-#currently save list name as method name e.g. int$Zhang
-return(int)
+  #currently save list name as method name e.g. int$Zhang
+  if(concise) {
+    #output preds
+    return(list(int = int))
+  } else {
+    #output oreds and intervals
+    return(list(preds = pred, int = int))
+  }
+
+#stop cluster
+#stopCluster(clust)
+gc()
+#getDoParWorkers()
 }
 
 #testing
-#hold <- rfint(response~., train_data = train, test_data = test, method = c("Tung", "Romano", "HDI", "Ghosal", "quantile"))
+#hold <- rfint(response~., train_data = train, test_data = test, method = c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal"))
+
 
 

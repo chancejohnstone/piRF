@@ -10,7 +10,6 @@ rfint(
   test_data = NULL,
   method = "Zhang",
   alpha = 0.1,
-  Zhang_method = "oob",
   symmetry = TRUE,
   seed = NULL,
   m_try = 2,
@@ -18,13 +17,16 @@ rfint(
   min_node_size = 5,
   num_threads = detectCores(),
   calibrate = FALSE,
+  Roy_method = "quantile",
   featureBias = TRUE,
   predictionBias = TRUE,
   Tung_R = 5,
   Tung_num_trees = 75,
-  Ghosal_variant = 1,
-  concise = FALSE,
-  prop = 0.632
+  variant = 1,
+  Ghosal_num_stages = 2,
+  prop = 0.618,
+  concise = TRUE,
+  ...
 )
 }
 \arguments{
@@ -38,37 +40,51 @@ rfint(
 
 \item{alpha}{Significance level for prediction intervals.}
 
+\item{symmetry}{True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only Zhang method. Defaults to TRUE.}
+
+\item{seed}{Seed for random number generation. Currently not utilized.}
+
 \item{m_try}{Number of variables to randomly select from at each split.}
 
-\item{num_trees}{Number of trees.}
+\item{num_trees}{Number of trees used in the random forest.}
 
 \item{min_node_size}{Minimum number of observations before split at a node.}
 
 \item{num_threads}{The number of threads to use in parallel. Default is the current number of cores.}
 
-\item{concise}{Predictions for each method output in addition to intervals. Defaults to FALSE.}
+\item{calibrate}{If TRUE, intervals calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for method = "Roy".}
+
+\item{featureBias}{Remove feature bias. Only for method = "Tung".}
+
+\item{predictionBias}{Remove prediction bias. Only for method = "Tung".}
+
+\item{Tung_num_trees}{Number of trees used in bias removal. Only for method = "Tung".}
+
+\item{variant}{Choose which variant to use. Only for method = "Ghosal". Currently variant 2 not implemented.}
+
+\item{Ghosal_num_stages}{Number of total stages. Only for method = "Ghosal".}
 
 \item{prop}{Proportion of training data to sample for each tree. Currently variant 2 not implemented.}
 
-\item{keep_inbag}{Saves matrix of observations and which tree(s) they occur in. Required to be true to generate variance estimates for Ghosal, Hooker 2018 method. *Should not be an option...}
-
-\item{intervals}{Generate prediction intervals or not.}
-
-\item{forest_type}{Determines what type of forest: regression forest vs. quantile regression forest. *Should not be an option...}
+\item{concise}{If TRUE, only predictions output. Defaults to FALSE}
 
 \item{replace}{Sample with replacement, or not. Utilized for the two different variants outlined in Ghosal, Hooker 2018. Currently variant 2 not implemented.}
 
-\item{variant}{Choose which variant to use. Currently variant 2 not implemented.}
+\item{TungR}{Number of repetitions used in bias removal. Only for method = "Tung".}
 }
 \description{
 Single wrapper for seven different methods, and their variants, to create random forest prediction intervals. More methods to be added.
 }
+\section{Values}{
+NA
+}
+
 \examples{
 library(piRF)
 
-getPILength <- function(PI){
+getPILength <- function(x){
 #average PI length across each set of predictions
-l <- PI[,2] - PI[,1]
+l <- x[,2] - x[,1]
 avg_l <- mean(l)
 return(avg_l)
 }
@@ -100,7 +116,8 @@ coverage
 length <- sapply(res, FUN = getPILength)
 length
 }
-\keyword{boosting}
+\keyword{boosting,}
+\keyword{calibration}
 \keyword{forest,}
 \keyword{interval,}
 \keyword{prediction}

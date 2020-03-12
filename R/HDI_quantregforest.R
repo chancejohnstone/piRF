@@ -72,6 +72,7 @@ HDI_quantregforest <- function(formula = NULL,
   inbag <- rf$inbag.counts
   train_node <- predict(rf, train_data, type = "terminalNodes", num.threads = num_threads)$predictions
   test_node <- predict(rf, test_data, type = "terminalNodes", num.threads = num_threads)$predictions
+  preds <- predict(rf, test_data)$predictions
 
   ## Compute random forest weights for test instances
   n_train <- nrow(train_data)
@@ -132,7 +133,7 @@ HDI_quantregforest <- function(formula = NULL,
 
   }
 
-  return(list(pred_intervals = pred_int, test_weights = test_weights))
+  return(list(preds = preds, pred_intervals = pred_int, test_weights = test_weights))
 }
 
 ## Test HDI_quantregforest function

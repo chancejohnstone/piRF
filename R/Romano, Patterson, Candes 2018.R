@@ -18,9 +18,9 @@
 ##
 ## --------------------------
 
-require(ranger)
-require(dplyr)
-require(reshape2)
+#require(ranger)
+#require(dplyr)
+#require(reshape2)
 
 
 #' implements RF prediction interval using split conformal prediction as outlined in Romano, Patterson, Candes 2018.
@@ -90,9 +90,10 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
   #collection of conformity scores
   maxE <- apply(E, FUN = max, MARGIN = 1)
 
-  preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha/2, 1- alpha/2), num.threads = num_threads)
+  #get median as well...
+  preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha/2, 0.5, 1- alpha/2), num.threads = num_threads)
   Q <- quantile(maxE, probs = 1 - alpha)
-  intervals <- cbind(preds$predictions[,1] - Q, preds$predictions[,2] + Q)
+  intervals <- cbind(preds$predictions[,1] - Q, preds$predictions[,3] + Q)
 
-  return(list(preds = preds, pred_intervals = intervals))
+  return(list(preds = preds$predictions[,2], pred_intervals = intervals))
 }
