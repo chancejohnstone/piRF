@@ -1,6 +1,6 @@
 ## ---------------------------
 ##
-## Script name: Boosting Random Forests to Reduce Bia
+## Script name: Boosting Random Forests to Reduce Bias
 ##
 ## Purpose of script: Implement boosted random forest introduced in Ghosal, Hooker 2018
 ##
@@ -49,8 +49,8 @@
 #' @noRd
 
 ###testing###
-library(ranger)
-source("C:/Users/thechanceyman/Documents/RFIntervals/R/Simulation Functions.R")
+#library(ranger)
+#source("C:/Users/thechanceyman/Documents/RFIntervals/R/Simulation Functions.R")
 
 #n <- 100
 #ratio <- 2/3
@@ -84,7 +84,8 @@ source("C:/Users/thechanceyman/Documents/RFIntervals/R/Simulation Functions.R")
 GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                           min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                           intervals = FALSE, alpha = NULL, prop = NULL, variant = 1,
-                          num_threads = NULL, num_stages = NULL){
+                          num_threads = NULL, num_stages = NULL,
+                          interval_type = NULL){
 
   #parse formula
   if (!is.null(formula)) {
@@ -110,7 +111,8 @@ GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, n
                         prop = prop, num_threads = num_threads, variant = variant)
 
   #get intervals
-  intervals <- GHVar(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads)
+  intervals <- GHVar(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads, 
+                     interval_type = interval_type)
 }
 
 #' generate stage 1 RF for Ghosal, Hooker RF implementation
@@ -146,7 +148,6 @@ genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_t
 #' This function is primarily meant to be used within the GhosalBoostRF() function. All parameters are same as in GhosalBoostRF().
 #' @keywords cats
 #' @export
-#' @examples
 #' @noRd
 #boosting function
 boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
@@ -237,9 +238,16 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
 #' GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads)
 #' @noRd
 #get variance estimate
-GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads){
+GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads, interval_type = interval_type){
   #add variance estimate procedure for variant 2; requires estimates, and inbag for each stage...
 
+  #one sided intervals
+  if(interval_type == "two-sided"){
+    alpha <- alpha
+  } else {
+    alpha <- alpha*2
+  }
+  
   #includes original rf
   num_stages <- length(boostRF$boostrf)
 
@@ -315,7 +323,7 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
   mse_est <- sum((boostRF$train_preds - train_data[,dep])^2)/n
 
   pred_intervals <- cbind(boostRF$preds + qnorm(alpha/2)*sqrt(var_est + mse_est),
-                          boostRF$preds - qnorm(alpha/2)*sqrt(var_est + mse_est))
+                          boostRF$preds + qnorm(1-alpha/2)*sqrt(var_est + mse_est))
 
   return(list(preds = boostRF$preds, pred_intervals = pred_intervals, var_est = var_est,
               mse = mse_est))

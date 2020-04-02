@@ -55,7 +55,7 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
                     min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                     intervals = TRUE, feature_num_trees = NULL,
                     alpha = NULL, forest_type = "QRF", featureBias = TRUE, predictionBias = TRUE, R = NULL,
-                    num_threads = NULL){
+                    num_threads = NULL, interval_type = NULL){
   
   #garbage collection
   gc()
@@ -90,7 +90,7 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
     rf <- predictionUbRF(rf, formula = formula, train_data = train_data, pred_data = pred_data, num_trees = num_trees,
                          min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                          intervals = TRUE, alpha = alpha, forest_type = "QRF", weights = featureWeights,
-                         num_threads = num_threads)
+                         num_threads = num_threads, interval_type = interval_type)
   }
 
   return(list(preds = rf$preds[,2], pred_intervals = rf$preds[,c(1,3)], weights = featureWeights))
@@ -101,7 +101,6 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
 #' @keywords random forest
 #' @export
-#' @examples
 #' @noRd
 #changes made to genRF; add to previous versions to maintain one function?
 genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
@@ -137,7 +136,6 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
 #' @keywords random forest
 #' @export
-#' @examples
 #' @noRd
 #call genRF in this function after sampling training data
 genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feature_num_trees = feature_num_trees,
@@ -189,7 +187,6 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
 #' @keywords random forest
 #' @export
-#' @examples
 #' @noRd
 #prediction bias correction; two stage random forest; takes first stage rf object as input
 #rf <- test$rf$stage1rf
@@ -197,8 +194,16 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
                            min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                            intervals = TRUE,
                            alpha = alpha, forest_type = "QRF", weights = NULL,
-                           num_threads = num_threads){
+                           num_threads = num_threads, interval_type = NULL){
 
+    
+  #one sided intervals
+  if(interval_type == "two-sided"){
+    alpha <- alpha
+  } else {
+    alpha <- alpha*2
+  }
+  
   #calibrate unused currently; implemented for QRF so foresttype not neccessary
   #generalize for RF?
   #parse formula

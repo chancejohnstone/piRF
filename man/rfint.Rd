@@ -26,6 +26,7 @@ rfint(
   Ghosal_num_stages = 2,
   prop = 0.618,
   concise = TRUE,
+  interval_type = "two-sided",
   ...
 )
 }
@@ -68,9 +69,16 @@ rfint(
 
 \item{concise}{If TRUE, only predictions output. Defaults to FALSE}
 
+\item{interval_type}{Type of prediction interval to generate. Options = c("two-sided", "lower", "upper"). Default is "two-sided".}
+
 \item{replace}{Sample with replacement, or not. Utilized for the two different variants outlined in Ghosal, Hooker 2018. Currently variant 2 not implemented.}
 
 \item{TungR}{Number of repetitions used in bias removal. Only for method = "Tung".}
+}
+\value{
+preds Predictions for test_data. Output with concise = FALSE. List format, organized by method name.
+
+int Prediction intervals for test_data. List format, organized by method name.
 }
 \description{
 Single wrapper for seven different methods, and their variants, to create random forest prediction intervals. More methods to be added.

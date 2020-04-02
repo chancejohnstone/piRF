@@ -21,6 +21,9 @@
 #' @keywords prediction interval, random forest, boosting, BOP
 #' @export
 #' @examples
+#' HDI_quantregforest <- function(formula = NULL, train_data = NULL, test_data = NULL, alpha = NULL,
+#' num_tree = NULL, mtry = NULL, min_node_size = NULL, max_depth = NULL, replace = TRUE, verbose = FALSE,
+#' num_threads = NULL)
 #' @noRd
 HDI_quantregforest <- function(formula = NULL,
                                train_data = NULL,

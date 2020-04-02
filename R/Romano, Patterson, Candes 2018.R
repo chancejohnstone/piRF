@@ -49,9 +49,17 @@
 #' intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL)
 #' @noRd
 CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
-                  min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-                  intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL){
-
+                 min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
+                 intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL,
+                 interval_type = NULL){
+  
+  #one sided intervals
+  if(interval_type == "two-sided"){
+    alpha <- alpha
+  } else {
+    alpha <- alpha*2
+  }
+  
   #parse formula
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
@@ -81,18 +89,20 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
                keep.inbag = keep_inbag, quantreg = TRUE,
                num.threads = num_threads)
 
-
+  #print(names(I2))
+  #print(dep)
+  
   #get conformity scores for everything in I2
-  quant_preds <- predict(rf, I2, type = 'quantiles', quantiles = c(alpha/2, 1 - alpha/ 2), num.threads = num_threads)
-
+  quant_preds <- predict(rf, I2, type = 'quantiles', quantiles = c(alpha/2, 1-alpha/2), num.threads = num_threads)
+  
   E <- cbind(quant_preds$predictions[,1] - I2[,dep], I2[,dep] - quant_preds$predictions[,2])
 
   #collection of conformity scores
   maxE <- apply(E, FUN = max, MARGIN = 1)
 
   #get median as well...
-  preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha/2, 0.5, 1- alpha/2), num.threads = num_threads)
-  Q <- quantile(maxE, probs = 1 - alpha)
+  preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha/2, 0.5, 1-alpha/2), num.threads = num_threads)
+  Q <- quantile(maxE, probs = 1 - (alpha/2 + alpha/2))
   intervals <- cbind(preds$predictions[,1] - Q, preds$predictions[,3] + Q)
 
   return(list(preds = preds$predictions[,2], pred_intervals = intervals))

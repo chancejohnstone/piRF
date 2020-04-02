@@ -2,8 +2,6 @@
 ##
 ## Script name: rfint()
 ##
-## potential package names: prRFer, prRFect, RFPRInter, PrInterRF, piRF
-##
 ## Purpose of script: incorporate all rf interval functions into single function
 ##
 ## Author: Chancellor Johnstone
@@ -25,7 +23,7 @@
 ## Tung methodology very slow...
 ##
 ## better way to adjust options for different methods... options list?
-## need to do this so we have more control over each function; calibrate0() for example...
+## need to do this so we have more control over each function; calibrate() for example...
 ## add details section
 ## --------------------------
 
@@ -80,11 +78,15 @@
 #' @param predictionBias Remove prediction bias. Only for method = "Tung".
 #' @param TungR Number of repetitions used in bias removal. Only for method = "Tung".
 #' @param Tung_num_trees Number of trees used in bias removal. Only for method = "Tung".
+#' @param interval_type Type of prediction interval to generate. Options = c("two-sided", "lower", "upper"). Default is "two-sided".
+#' @return preds Predictions for test_data. Output with concise = FALSE. List format, organized by method name.
+#' @return int Prediction intervals for test_data. List format, organized by method name.
 #' @section Values
 #' @keywords prediction interval, random forest, boosting, calibration
 #' @importFrom parallel detectCores
 #' @importFrom rfinterval rfinterval
 #' @import ranger
+#' @import foreach
 #' @importFrom MASS ginv
 #' @import doParallel
 #' @export
@@ -129,12 +131,13 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
                   min_node_size = 5, num_threads = detectCores(),
                   calibrate = FALSE, Roy_method = "quantile", featureBias = TRUE, predictionBias = TRUE,
                   Tung_R = 5, Tung_num_trees = 75, variant = 1, Ghosal_num_stages = 2, prop = .618,
-                  concise = TRUE, ...){
+                  concise = TRUE, interval_type = "two-sided", ...){
 
   #required libraries
   #require(parallel)
   #require(rfinterval)
   #require(ranger)
+  #interval_type <- "upper"
 
   if(is.null(num_threads)){
     num_threads <- detectCores()
@@ -155,7 +158,7 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
   #tracking list
   for(id in method){
     if(id == "Zhang"){
-      #Zhang call
+      #Zhang call; no one sided
       res[[id]] <- rfinterval(formula = formula, train_data = train, test_data = test,
                         method = "oob", alpha = alpha, symmetry = symmetry, seed = seed,
                         params_ranger = list(mtry = m_try, num.trees = num_trees, min.node.size = min_node_size,
@@ -165,8 +168,8 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
     } else if (id == "Roy"){
       #Roy, Larocque call
       res[[id]] <- RoyRF(formula = formula, train_data = train, pred_data = test, intervals = TRUE,
-                   interval_type = Roy_method, alpha = alpha, num_trees = num_trees,
-                   num_threads = num_threads, m_try = m_try)
+                   interval_method = Roy_method, alpha = alpha, num_trees = num_trees,
+                   num_threads = num_threads, m_try = m_try, interval_type = interval_type)
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
@@ -175,7 +178,8 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
       res[[id]] <- GhosalBoostRF(formula = formula, train_data = train, pred_data = test, num_trees = num_trees,
                            min_node_size = min_node_size, m_try = m_try, keep_inbag = TRUE,
                            intervals = TRUE, alpha = alpha, prop = prop,
-                           variant = variant, num_threads = num_threads, num_stages = Ghosal_num_stages)
+                           variant = variant, num_threads = num_threads, num_stages = Ghosal_num_stages,
+                           interval_type = interval_type)
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
@@ -185,7 +189,7 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
                       num_trees = num_trees, feature_num_trees = Tung_num_trees,
                       min_node_size = min_node_size, m_try = m_try, alpha = alpha, forest_type = "QRF",
                       featureBias = featureBias, predictionBias = predictionBias,
-                      R = Tung_R, num_threads = num_threads)
+                      R = Tung_R, num_threads = num_threads, interval_type = interval_type)
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
@@ -194,7 +198,7 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
       res[[id]] <- CQRF(formula = formula, train_data = train, pred_data = test,
                   num_trees = num_trees, min_node_size = min_node_size,
                   m_try = m_try, keep_inbag = TRUE, intervals = TRUE,
-                  num_threads = num_threads, alpha = alpha)
+                  num_threads = num_threads, alpha = alpha, interval_type = interval_type)
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
@@ -223,6 +227,13 @@ rfint <- function(formula = formula, train_data = NULL, test_data = NULL, method
       stop(paste0(id, " is not a supported random forest prediction interval methodology"))
     }
 
+    #one sided intervals; adjusts intervals based on on what sided interval is desired
+    if(interval_type == "upper"){
+      int[[id]][,1] <- -Inf
+    } else if(interval_type == "lower"){
+      int[[id]][,2] <- Inf
+    }
+
     colnames(int[[id]]) <- c("lower", "upper")
   }
 
@@ -242,7 +253,7 @@ gc()
 }
 
 #testing
-#hold <- rfint(response~., train_data = train, test_data = test, method = c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal"))
+#hold <- rfint(response ~ ., train_data = train, test_data = test, method = c("Roy"))
 
 
 

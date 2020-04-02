@@ -34,7 +34,7 @@
 #' @param m_try Number of variables to randomly select from at each split.
 #' @param keep_inbag Saves matrix of observations and which tree(s) they occur in. Required to be true to generate variance estimates for Ghosal, Hooker 2018 method. *Should not be an option...
 #' @param intervals Generate prediction intervals or not.
-#' @param interval_type which prediction interval type to generate. Several outlined in paper; currently only one method implemented.
+#' @param interval_method which prediction interval type to generate. Several outlined in paper; currently only one method implemented.
 #' @param calibrate calibrate prediction intervals based on out-of-bag performance. Adjusts alpha to get nominal coverage.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
@@ -43,13 +43,13 @@
 #' @examples
 #' RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-#' intervals = TRUE, interval_type = "quantile", calibrate = FALSE, alpha = NULL, num_threads = num_threads)
+#' intervals = TRUE, interval_method = "quantile", calibrate = FALSE, alpha = NULL, num_threads = num_threads)
 #' @noRd
 RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                   min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-                  intervals = TRUE, interval_type = "quantile", calibrate = FALSE, alpha = NULL, num_threads = NULL,
+                  intervals = TRUE, interval_method = "quantile", calibrate = FALSE, alpha = NULL, num_threads = NULL,
                   tolerance = NULL, step_percent = NULL, under = NULL, method = NULL,
-                  max_iter = NULL){
+                  max_iter = NULL, interval_type = NULL){
 
   #garbage collection
   #gc()
@@ -69,6 +69,9 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   rf <- ranger(formula, data = train_data, num.trees = num_trees,
                    min.node.size = min_node_size, mtry = m_try,
                    keep.inbag = keep_inbag, num.threads = num_threads)
+  
+  #predictions for test data
+  rf_preds <- predict(rf, pred_data)$predictions
 
   if (intervals) {
 
@@ -87,11 +90,11 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
                          max_iter = max_iter)
     }
 
-    if(interval_type == "quantile") {
-      int <- genqInt(BOP, alpha)
-    } else if (interval_type == "HDI") {
+    if(interval_method == "quantile") {
+      int <- genqInt(BOP, alpha, interval_type = interval_type)
+    } else if (interval_method == "HDI") {
       int <- genHDInt(BOP, alpha)
-    } else if (interval_type == "CHDI") {
+    } else if (interval_method == "CHDI") {
       int <- genCHDInt(BOP, alpha)
     }
 
@@ -101,7 +104,7 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   }
 
   #do we need to output alpha? (maybe if we calibrate...)
-  return(list(preds = rf$predictions, pred_intervals = rf$int, alpha = alpha))
+  return(list(preds = rf_preds, pred_intervals = rf$int, alpha = alpha))
 }
 
 #' generate BOP sets from Roy, Larocque 2019
@@ -109,7 +112,6 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #' This function is primarily meant to be used within the RoyRF() function. All parameters are same as in RoyRF().
 #' @keywords random forest
 #' @export
-#' @examples
 #' @noRd
 #generates the BOP values for each prediction value
 #maybe we could separate this into a genOOB function vs. a genBOP function?
@@ -213,7 +215,15 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
 #' genqInt <- function(BOP, alpha = alpha)
 #' @noRd
 #quantile prediction using BOP
-genqInt <- function(BOP, alpha = alpha){
+genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
+  
+  #one sided intervals
+  if(interval_type == "two-sided"){
+    alpha <- alpha
+  } else {
+    alpha <- alpha*2
+  }
+  
   q <- unlist(lapply(BOP, FUN = quantile, probs = c(alpha/2, 1-alpha/2)))
   dim(q) <- c(2, length(q)/2)
   q <- t(q)
@@ -228,7 +238,6 @@ genqInt <- function(BOP, alpha = alpha){
 #' @param BOP BOP object generated from genBOP() function.
 #' @keywords random forest, calibration
 #' @export
-#' @examples
 #' @noRd
 #HDI intervals using density estimation of BOP; outputs a list due to potential for HDI to be non-contiguous
 genHDInt <- function(BOP, alpha = alpha){
@@ -249,7 +258,6 @@ genHDInt <- function(BOP, alpha = alpha){
 #' @param BOP BOP object generated from genBOP() function.
 #' @keywords random forest, calibration
 #' @export
-#' @examples
 #' @noRd
 #connects the noninterval HDI
 genCHDInt <- function(BOP, alpha = alpha){
