@@ -83,7 +83,7 @@
 #' @return int Prediction intervals for test_data. List format, organized by method name.
 #' @section Values
 #' @keywords prediction interval, random forest, boosting, calibration
-#' @importFrom parallel detectCores
+#' @import parallel
 #' @importFrom rfinterval rfinterval
 #' @import ranger
 #' @import foreach
