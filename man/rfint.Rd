@@ -33,15 +33,15 @@ rfint(
 \arguments{
 \item{formula}{Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.}
 
-\item{train_data}{Training data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Matches ranger() requirements.}
+\item{train_data}{Training data of class data.frame.}
 
-\item{test_data}{Test data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Utilizes ranger::predict() to get prediction intervals for test data.}
+\item{test_data}{Test data of class data.frame. Utilizes ranger::predict() to produce prediction intervals for test data.}
 
-\item{method}{Choose what method to generate RF prediction intervals. ("Zhang", "quantile", "Romano", "Ghosal", "Roy", "Tung", "HDI). Defaults to "Zhang".}
+\item{method}{Choose what method to generate RF prediction intervals. Options are \code{method = c("Zhang", "quantile", "Romano", "Ghosal", "Roy", "Tung", "HDI")}. Defaults to \code{method = "Zhang"}.}
 
-\item{alpha}{Significance level for prediction intervals.}
+\item{alpha}{Significance level for prediction intervals. Defaults to \code{alpha = 0.1}.}
 
-\item{symmetry}{True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only Zhang method. Defaults to TRUE.}
+\item{symmetry}{True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only \code{method = "Zhang"}. Defaults to \code{symmetry = TRUE}.}
 
 \item{seed}{Seed for random number generation. Currently not utilized.}
 
@@ -53,43 +53,42 @@ rfint(
 
 \item{num_threads}{The number of threads to use in parallel. Default is the current number of cores.}
 
-\item{calibrate}{If TRUE, intervals calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for method = "Roy".}
+\item{calibrate}{If \code{calibrate = TRUE}, intervals are calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for \code{method = "Roy"}.}
 
-\item{featureBias}{Remove feature bias. Only for method = "Tung".}
+\item{Roy_method}{Interval method for \code{method = "Roy"}. Options are \code{Roy_method = c("quantile", "HDI", "CHDI")}.}
 
-\item{predictionBias}{Remove prediction bias. Only for method = "Tung".}
+\item{featureBias}{Remove feature bias. Only for \code{method = "Tung"}.}
 
-\item{Tung_num_trees}{Number of trees used in bias removal. Only for method = "Tung".}
+\item{predictionBias}{Remove prediction bias. Only for \code{method = "Tung"}.}
 
-\item{variant}{Choose which variant to use. Only for method = "Ghosal". Currently variant 2 not implemented.}
+\item{Tung_num_trees}{Number of trees used in bias removal. Only for \code{method = "Tung"}.}
 
-\item{Ghosal_num_stages}{Number of total stages. Only for method = "Ghosal".}
+\item{variant}{Choose which variant to use. Only for \code{method = "Ghosal"}. Currently variant 2 not implemented.}
 
-\item{prop}{Proportion of training data to sample for each tree. Currently variant 2 not implemented.}
+\item{Ghosal_num_stages}{Number of total stages. Only for \code{method = "Ghosal"}.}
 
-\item{concise}{If TRUE, only predictions output. Defaults to FALSE}
+\item{prop}{Proportion of training data to sample for each tree. Currently variant 2 not implemented. Only for \code{method = "Ghosal"}.}
 
-\item{interval_type}{Type of prediction interval to generate. Options = c("two-sided", "lower", "upper"). Default is "two-sided".}
+\item{concise}{If  concise = TRUE, only predictions output. Defaults to \code{concise = FALSE}.}
 
-\item{replace}{Sample with replacement, or not. Utilized for the two different variants outlined in Ghosal, Hooker 2018. Currently variant 2 not implemented.}
+\item{interval_type}{Type of prediction interval to generate. Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.}
 
-\item{TungR}{Number of repetitions used in bias removal. Only for method = "Tung".}
+\item{replace}{Sample with replacement, or without. Utilized for the two different variants outlined in \code{method = "Ghosal"}. Currently variant 2 not implemented.}
+
+\item{TungR}{Number of repetitions used in bias removal. Only for \code{method = "Tung"}.}
 }
 \value{
-preds Predictions for test_data. Output with concise = FALSE. List format, organized by method name.
-
-int Prediction intervals for test_data. List format, organized by method name.
+\item{\code{int}}{Default output. Includes prediction intervals for all methods in \code{methods}.}
+   \item{\code{preds}}{Predictions for test data for all methods in \code{methods}. Output when \code{concise = FALSE}.}
 }
 \description{
-Single wrapper for seven different methods, and their variants, to create random forest prediction intervals. More methods to be added.
+Implements seven different random forest prediction interval methods, and their variants.
 }
-\section{Values}{
-NA
-}
-
 \examples{
+\donttest{
 library(piRF)
 
+#functions to get average length and average coverage of output
 getPILength <- function(x){
 #average PI length across each set of predictions
 l <- x[,2] - x[,1]
@@ -105,9 +104,9 @@ getCoverage <- function(x, response){
 
 #import airfoil self noise dataset
 data(airfoil)
-
+method_vec <- c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal")
 #generate train and test data
-ratio <- .9
+ratio <- .975
 nrow <- nrow(airfoil)
 n <- floor(nrow*ratio)
 samp <- sample(1:nrow, size = n)
@@ -116,13 +115,57 @@ test <- airfoil[-samp,]
 
 #generate prediction intervals
 res <- rfint(pressure ~ . , train_data = train, test_data = test,
-             method = c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal"))
+             method = method_vec,
+             concise= FALSE)
 
 #empirical coverage, and average prediction interval length for each method
-coverage <- sapply(res, FUN = getCoverage, response = test$pressure)
+coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
 coverage
-length <- sapply(res, FUN = getPILength)
+length <- sapply(res$int, FUN = getPILength)
 length
+
+#plotting intervals and predictions
+par(mfrow = c(2,2))
+for(i in 1:7){
+   col <- ((test$pressure >= res$int[[i]][,1]) * (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
+   plot(x = res$preds[[i]], y = test$pressure, pch = 20,
+      col = "black", ylab = "true", xlab = "predicted", main = method_vec[i])
+   abline(a = 0, b = 1)
+   segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
+      y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
+}
+}
+}
+\references{
+\insertRef{breiman2001random}{piRF}
+
+\insertRef{ghosal2018boosting}{piRF}
+
+\insertRef{meinshausen2006quantile}{piRF}
+
+\insertRef{romano2019conformalized}{piRF}
+
+\insertRef{roy2019prediction}{piRF}
+
+\insertRef{tung2014bias}{piRF}
+
+\insertRef{zhang2019random}{piRF}
+
+\insertRef{zhu2019hdi}{piRF}
+}
+\seealso{
+\link[ranger]{ranger}
+
+\link[rfinterval]{rfinterval}
+
+\link[boostedForest]{fit}
+
+\link[boostedForest]{output}
+}
+\author{
+Chancellor Johnstone
+
+Haozhe Zhang
 }
 \keyword{boosting,}
 \keyword{calibration}

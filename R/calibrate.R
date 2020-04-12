@@ -31,8 +31,7 @@
 #' @param undercoverage Allow undercoverage. Defaults to TRUE. Not currently implemented.
 #' @param method Method to calibrate prediction intervals with. Defaults to "quantile"). Current only "quantile" implemented.
 #' @param max_iter Maximum number of iterations. Defaults to 10.
-#' @keywords random forest, calibration
-#' @export
+#' @keywords random forest, calibration, internal
 #' @examples
 #' calibrate <- function(oob, alpha = alpha, response_data, dep, tolerance = .025)
 #' @noRd

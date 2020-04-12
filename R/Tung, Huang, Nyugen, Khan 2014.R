@@ -20,10 +20,6 @@
 ## make parallel; optimize when parallel is used vs not, based on R value...
 ## --------------------------
 
-#require(ranger)
-#require(dplyr)
-#require(reshape2)
-
 #' implements RF prediction interval method in Tung, Huang, Nyugen, Khan 2014.
 #'
 #' This function implements the feature bias and prediction bias methods outlined in Tung 2014.
@@ -41,8 +37,7 @@
 #' @param R number of RFs generated in feature bias stage of Tung 2014 prediction interval. Defualt is 10.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, boosting, BOP
-#' @export
+#' @keywords prediction interval, random forest, debiasing, internal
 #' @examples
 #' TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -56,10 +51,10 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
                     intervals = TRUE, feature_num_trees = NULL,
                     alpha = NULL, forest_type = "QRF", featureBias = TRUE, predictionBias = TRUE, R = NULL,
                     num_threads = NULL, interval_type = NULL){
-  
+
   #garbage collection
   gc()
-  
+
   #parse formula
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
@@ -99,8 +94,7 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
 #' generate quantile RF
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
-#' @keywords random forest
-#' @export
+#' @keywords random forest, internal
 #' @noRd
 #changes made to genRF; add to previous versions to maintain one function?
 genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
@@ -117,7 +111,7 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   } else {
     stop("Error: Please give formula!")
   }
-  
+
   if (forest_type == "QRF"){
     quantreg <- TRUE
   } else {quantreg <- FALSE}
@@ -134,8 +128,7 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #' generate weights for RF through feature bias reduction method outlined in Tung 2014.
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
-#' @keywords random forest
-#' @export
+#' @keywords random forest, internal
 #' @noRd
 #call genRF in this function after sampling training data
 genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feature_num_trees = feature_num_trees,
@@ -148,7 +141,7 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
   #adjust this; currently includes an artifical response...
   vi <- matrix(0, nrow = R, ncol = dim(train_data)[2]*2-1)
   n <- dim(train_data)[1]
-  
+
   #sample from training data within a feature; R replications
   vi <- foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger")) %dopar% {
     #need to remove dependent variable?
@@ -167,7 +160,7 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
     #return the variable importance
     vi
   }
-  
+
   vi
   #get VI_hat
   vi_hat_all <- apply(vi, FUN = mean, MARGIN = 2)
@@ -185,8 +178,7 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
 #' performs prediction debiasing from Tung 2014
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
-#' @keywords random forest
-#' @export
+#' @keywords random forest, internal
 #' @noRd
 #prediction bias correction; two stage random forest; takes first stage rf object as input
 #rf <- test$rf$stage1rf
@@ -196,14 +188,14 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
                            alpha = alpha, forest_type = "QRF", weights = NULL,
                            num_threads = num_threads, interval_type = NULL){
 
-    
+
   #one sided intervals
   if(interval_type == "two-sided"){
     alpha <- alpha
   } else {
     alpha <- alpha*2
   }
-  
+
   #calibrate unused currently; implemented for QRF so foresttype not neccessary
   #generalize for RF?
   #parse formula
@@ -214,11 +206,11 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
   } else {
     stop("Error: Please give formula!")
   }
-  
+
   #get dependent variable
   dep <- names(train_data)[1]
   #print(dep)
-  
+
   #keeping inbag by default; get oob for each tree
   #getting oob index for each training data point
   oob <- unlist(rf$inbag.counts)

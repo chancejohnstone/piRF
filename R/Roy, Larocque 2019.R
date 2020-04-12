@@ -20,10 +20,6 @@
 ##
 ## --------------------------
 
-#require(ranger)
-#require(dplyr)
-#require(reshape2)
-
 #' implements RF prediction interval method in Roy, Larocque 2019.
 #' Currently implemented is the quantile method with BOP intervals.
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
@@ -38,8 +34,7 @@
 #' @param calibrate calibrate prediction intervals based on out-of-bag performance. Adjusts alpha to get nominal coverage.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, boosting, BOP
-#' @export
+#' @keywords prediction interval, random forest, BOP, internal
 #' @examples
 #' RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -69,7 +64,7 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   rf <- ranger(formula, data = train_data, num.trees = num_trees,
                    min.node.size = min_node_size, mtry = m_try,
                    keep.inbag = keep_inbag, num.threads = num_threads)
-  
+
   #predictions for test data
   rf_preds <- predict(rf, pred_data)$predictions
 
@@ -110,8 +105,7 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #' generate BOP sets from Roy, Larocque 2019
 #'
 #' This function is primarily meant to be used within the RoyRF() function. All parameters are same as in RoyRF().
-#' @keywords random forest
-#' @export
+#' @keywords random forest, internal
 #' @noRd
 #generates the BOP values for each prediction value
 #maybe we could separate this into a genOOB function vs. a genBOP function?
@@ -146,11 +140,7 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
   BOP <- list()
   oobBOP <- list()
 
-  ###this needs to be done in parallel
-  #library(doParallel)
-  #setting up in parallel
-  #start <- Sys.time()
-
+  #done in parallel
   BOP <- foreach(i = 1:npred) %dopar% {
     #terminal node within each tree; compare to trees of training data only
     pred_nodes <- term_nodes[i,]
@@ -205,25 +195,24 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
   return(list(BOP = BOP, oobBOP = oobBOP, dep = dep))
 }
 
-#' generates BOP quantile prediction intervals from Roy, Larocque 2019
+#' generates BOP quantile prediction intervals from Roy, Larocque 2019.
 #'
 #' This function is primarily meant to be used within the RoyRF() function.
 #' @param BOP BOP object generated from genBOP() function.
-#' @keywords random forest, calibration
-#' @export
+#' @keywords random forest, calibration, internal
 #' @examples
 #' genqInt <- function(BOP, alpha = alpha)
 #' @noRd
 #quantile prediction using BOP
 genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
-  
+
   #one sided intervals
   if(interval_type == "two-sided"){
     alpha <- alpha
   } else {
     alpha <- alpha*2
   }
-  
+
   q <- unlist(lapply(BOP, FUN = quantile, probs = c(alpha/2, 1-alpha/2)))
   dim(q) <- c(2, length(q)/2)
   q <- t(q)
@@ -236,8 +225,7 @@ genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
 #'
 #' This function is primarily meant to be used within the RoyRF() function. Could ptentially result in non-contiguous intervals.
 #' @param BOP BOP object generated from genBOP() function.
-#' @keywords random forest, calibration
-#' @export
+#' @keywords random forest, calibration, internal
 #' @noRd
 #HDI intervals using density estimation of BOP; outputs a list due to potential for HDI to be non-contiguous
 genHDInt <- function(BOP, alpha = alpha){
@@ -256,8 +244,7 @@ genHDInt <- function(BOP, alpha = alpha){
 #'
 #' This function is primarily meant to be used within the RoyRF() function.
 #' @param BOP BOP object generated from genBOP() function.
-#' @keywords random forest, calibration
-#' @export
+#' @keywords random forest, calibration, internal
 #' @noRd
 #connects the noninterval HDI
 genCHDInt <- function(BOP, alpha = alpha){

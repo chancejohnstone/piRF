@@ -18,10 +18,6 @@
 ## variant 2 implemented
 ## --------------------------
 
-#require(ranger)
-#require(dplyr)
-#require(reshape2)
-
 #' implements RF prediction interval method in Ghosal, Hooker 2018
 #'
 #' This function implements variant one of the prediction interval methods in Ghosal, Hooker 2018.
@@ -38,8 +34,7 @@
 #' @param variant Choose which variant to use. Currently variant 2 not implemented.
 #' @param num_stages Number of boosting stages. Functional for >= 2; variance estimates need adjustment for variant 2.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, boosting
-#' @export
+#' @keywords prediction interval, random forest, boosting, internal
 #' @examples
 #' GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = 500,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -49,7 +44,6 @@
 #' @noRd
 
 ###testing###
-#library(ranger)
 #source("C:/Users/thechanceyman/Documents/RFIntervals/R/Simulation Functions.R")
 
 #n <- 100
@@ -111,15 +105,14 @@ GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, n
                         prop = prop, num_threads = num_threads, variant = variant)
 
   #get intervals
-  intervals <- GHVar(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads, 
+  intervals <- GHVar(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads,
                      interval_type = interval_type)
 }
 
 #' generate stage 1 RF for Ghosal, Hooker RF implementation
 #'
 #' This function is primarily meant to be used within the GhosalBoostRF function. All parameters are same as in GhosalBoostRF().
-#' @keywords random forest
-#' @export
+#' @keywords random forest, internal
 #' @examples
 #' genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -146,8 +139,7 @@ genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_t
 #' generate stage 2 (and more) RF for Ghosal, Hooker RF implementation
 #'
 #' This function is primarily meant to be used within the GhosalBoostRF() function. All parameters are same as in GhosalBoostRF().
-#' @keywords cats
-#' @export
+#' @keywords boosting, internal
 #' @noRd
 #boosting function
 boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
@@ -232,8 +224,7 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
 #'
 #' This function is primarily meant to be used within the GhosalBoostRF() function. All parameters are same as in GhosalBoostRF().
 #' @param love Do you love cats? Defaults to TRUE.
-#' @keywords U statistics, random forest, prediction intervals
-#' @export
+#' @keywords U statistics, random forest, prediction intervals, internal
 #' @examples
 #' GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads)
 #' @noRd
@@ -247,7 +238,7 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
   } else {
     alpha <- alpha*2
   }
-  
+
   #includes original rf
   num_stages <- length(boostRF$boostrf)
 

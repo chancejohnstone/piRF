@@ -41,8 +41,7 @@
 #' @param prop Proportion of training data to sample for each tree. Currently variant 2 not implemented.
 #' @param variant Choose which variant to use. Currently variant 2 not implemented.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, boosting
-#' @export
+#' @keywords prediction interval, random forest, internal, conformal
 #' @examples
 #' CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -52,14 +51,14 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
                  min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                  intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL,
                  interval_type = NULL){
-  
+
   #one sided intervals
   if(interval_type == "two-sided"){
     alpha <- alpha
   } else {
     alpha <- alpha*2
   }
-  
+
   #parse formula
   if (!is.null(formula)) {
     train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
@@ -91,10 +90,10 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
 
   #print(names(I2))
   #print(dep)
-  
+
   #get conformity scores for everything in I2
   quant_preds <- predict(rf, I2, type = 'quantiles', quantiles = c(alpha/2, 1-alpha/2), num.threads = num_threads)
-  
+
   E <- cbind(quant_preds$predictions[,1] - I2[,dep], I2[,dep] - quant_preds$predictions[,2])
 
   #collection of conformity scores
