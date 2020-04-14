@@ -3,14 +3,14 @@ Title: Prediction Intervals for Random Forests
 Version: 0.1.0
 Date: 2020-04-14
 Authors@R: 
-    person(given = "Chancellor",
+    c(person(given = "Chancellor",
            family = "Johnstone",
            role = c("cre", "aut"),
-           email = "chancellor.johnstone@gmail.com")
+           email = "chancellor.johnstone@gmail.com"),
     person(given = "Haozhe",
            family = "Zhang",
-           role = c("cre", "aut"),
-           email = "haozhe.stat@gmail.com")
+           role = c("aut"),
+           email = "haozhe.stat@gmail.com"))
 Maintainer: Chancellor Johnstone <chancellor.johnstone@gmail.com>
 Description: Implements multiple prediction interval methodologies for random forests.
 License: GPL-3
