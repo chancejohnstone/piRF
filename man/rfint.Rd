@@ -64,11 +64,11 @@ rfint(
 
 \item{Tung_num_trees}{Number of trees used in bias removal. Only for \code{method = "Tung"}.}
 
-\item{variant}{Choose which variant to use. Only for \code{method = "Ghosal"}. Currently variant 2 not implemented.}
+\item{variant}{Choose which variant to use. Options are \code{method = c("1", "2")}. Only for \code{method = "Ghosal"}.}
 
 \item{Ghosal_num_stages}{Number of total stages. Only for \code{method = "Ghosal"}.}
 
-\item{prop}{Proportion of training data to sample for each tree. Currently variant 2 not implemented. Only for \code{method = "Ghosal"}.}
+\item{prop}{Proportion of training data to sample for each tree. Only for \code{method = "Ghosal"}.}
 
 \item{concise}{If  concise = TRUE, only predictions output. Defaults to \code{concise = FALSE}.}
 
@@ -86,7 +86,7 @@ The seven methods implemented are cited in the References section.
 Additional information can be found within those references.
 Each of these methods are implemented by utilizing the ranger package.
 For \code{method = "Zhang"}, prediction intervals are generated using out-of-bag residuals.
-\code{method = "Romano"} perform utilizes a split-conformal approach.
+\code{method = "Romano"} utilizes a split-conformal approach.
 \code{method = "Roy"} uses a bag-of-predictors approach.
 \code{method = "Ghosal"} performs boosting to reduce bias in the random forest, and estimates variance.
 The authors provide mutliple variants to their methodology.

@@ -21,7 +21,7 @@
 #' Additional information can be found within those references.
 #' Each of these methods are implemented by utilizing the ranger package.
 #' For \code{method = "Zhang"}, prediction intervals are generated using out-of-bag residuals.
-#' \code{method = "Romano"} perform utilizes a split-conformal approach.
+#' \code{method = "Romano"} utilizes a split-conformal approach.
 #' \code{method = "Roy"} uses a bag-of-predictors approach.
 #' \code{method = "Ghosal"} performs boosting to reduce bias in the random forest, and estimates variance.
 #' The authors provide mutliple variants to their methodology.
@@ -41,12 +41,12 @@
 #' @param m_try Number of variables to randomly select from at each split.
 #' @param concise If  concise = TRUE, only predictions output. Defaults to \code{concise = FALSE}.
 #' @param seed Seed for random number generation. Currently not utilized.
-#' @param prop Proportion of training data to sample for each tree. Currently variant 2 not implemented. Only for \code{method = "Ghosal"}.
+#' @param prop Proportion of training data to sample for each tree. Only for \code{method = "Ghosal"}.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
 #' @param symmetry True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only \code{method = "Zhang"}. Defaults to \code{symmetry = TRUE}.
 #' @param calibrate If \code{calibrate = TRUE}, intervals are calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for \code{method = "Roy"}.
 #' @param Roy_method Interval method for \code{method = "Roy"}. Options are \code{Roy_method = c("quantile", "HDI", "CHDI")}.
-#' @param variant Choose which variant to use. Only for \code{method = "Ghosal"}. Currently variant 2 not implemented.
+#' @param variant Choose which variant to use. Options are \code{method = c("1", "2")}. Only for \code{method = "Ghosal"}.
 #' @param Ghosal_num_stages Number of total stages. Only for \code{method = "Ghosal"}.
 #' @param featureBias Remove feature bias. Only for \code{method = "Tung"}.
 #' @param predictionBias Remove prediction bias. Only for \code{method = "Tung"}.
@@ -205,7 +205,7 @@ rfint <- function(formula = formula,
       res[[id]] <- TungUbRF(formula = formula, train_data = train_data, pred_data = test_data,
                       num_trees = num_trees, feature_num_trees = Tung_num_trees,
                       min_node_size = min_node_size, m_try = m_try, alpha = alpha, forest_type = "QRF",
-                      featureBias = featureBias, predictionBias = predictionBias,
+                      featureBias = TRUE, predictionBias = TRUE,
                       R = Tung_R, num_threads = num_threads, interval_type = interval_type)
 
       pred[[id]] <- res[[id]]$preds
