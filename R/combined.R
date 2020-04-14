@@ -45,15 +45,16 @@
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
 #' @param symmetry True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only \code{method = "Zhang"}. Defaults to \code{symmetry = TRUE}.
 #' @param calibrate If \code{calibrate = TRUE}, intervals are calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for \code{method = "Roy"}.
-#' @param Roy_method Interval method for \code{method = "Roy"}. Options are \code{Roy_method = c("quantile", "HDI", "CHDI")}.
+#' @param Roy_method Interval method for \code{method = "Roy"}.
+#' Options are \code{Roy_method = c("quantile", "HDI", "CHDI")}.
 #' @param variant Choose which variant to use. Options are \code{method = c("1", "2")}. Only for \code{method = "Ghosal"}.
 #' @param Ghosal_num_stages Number of total stages. Only for \code{method = "Ghosal"}.
 #' @param featureBias Remove feature bias. Only for \code{method = "Tung"}.
 #' @param predictionBias Remove prediction bias. Only for \code{method = "Tung"}.
 #' @param Tung_R Number of repetitions used in bias removal. Only for \code{method = "Tung"}.
 #' @param Tung_num_trees Number of trees used in bias removal. Only for \code{method = "Tung"}.
-#' @param interval_type Type of prediction interval to generate. Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.
-#' @keywords prediction interval, random forest, boosting, calibration
+#' @param interval_type Type of prediction interval to generate.
+#' Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.
 #' @export
 #' @importFrom Rdpack reprompt
 #' @seealso \link[ranger]{ranger}
@@ -94,7 +95,8 @@
 #' #generate prediction intervals
 #' res <- rfint(pressure ~ . , train_data = train, test_data = test,
 #'              method = method_vec,
-#'              concise= FALSE)
+#'              concise= FALSE,
+#'              num_threads = 1)
 #'
 #' #empirical coverage, and average prediction interval length for each method
 #' coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
@@ -105,7 +107,8 @@
 #' #plotting intervals and predictions
 #' par(mfrow = c(2,2))
 #' for(i in 1:7){
-#'    col <- ((test$pressure >= res$int[[i]][,1]) * (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
+#'    col <- ((test$pressure >= res$int[[i]][,1]) *
+#'    (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
 #'    plot(x = res$preds[[i]], y = test$pressure, pch = 20,
 #'       col = "black", ylab = "true", xlab = "predicted", main = method_vec[i])
 #'    abline(a = 0, b = 1)

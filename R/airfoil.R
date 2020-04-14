@@ -1,13 +1,11 @@
 #' airfoil self noise dataset
 #'
-#' The NASA data set comprises different size NACA 0012 airfoils at various wind tunnel speeds and angles of attack. 
+#' The NASA data set comprises different size NACA 0012 airfoils at various wind tunnel speeds and angles of attack.
 #' The span of the airfoil and the observer position were the same in all of the experiments.
 #'
 #' @docType data
 #'
 #' @usage data(airfoil)
-#'
-#' @keywords datasets
 #'
 #' @references T.F. Brooks, D.S. Pope, and A.M. Marcolini.
 #' Airfoil self-noise and prediction.

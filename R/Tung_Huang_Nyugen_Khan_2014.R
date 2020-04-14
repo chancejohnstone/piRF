@@ -37,7 +37,7 @@
 #' @param R number of RFs generated in feature bias stage of Tung 2014 prediction interval. Defualt is 10.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, debiasing, internal
+#' @keywords internal
 #' @examples
 #' TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -91,7 +91,7 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
 #' generate quantile RF
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
-#' @keywords random forest, internal
+#' @keywords internal
 #' @noRd
 #changes made to genRF; add to previous versions to maintain one function?
 genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
@@ -125,7 +125,7 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #' generate weights for RF through feature bias reduction method outlined in Tung 2014.
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
-#' @keywords random forest, internal
+#' @keywords internal
 #' @noRd
 #call genRF in this function after sampling training data
 genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feature_num_trees = feature_num_trees,
@@ -179,7 +179,7 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
 #' performs prediction debiasing from Tung 2014
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
-#' @keywords random forest, internal
+#' @keywords internal
 #' @noRd
 #prediction bias correction; two stage random forest; takes first stage rf object as input
 predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,

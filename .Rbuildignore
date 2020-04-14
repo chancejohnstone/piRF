@@ -1,2 +1,5 @@
 ^piRF\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$
+^REFERENCES\.bib$
+^cran-comments\.md$

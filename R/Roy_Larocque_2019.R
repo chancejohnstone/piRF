@@ -34,7 +34,7 @@
 #' @param calibrate calibrate prediction intervals based on out-of-bag performance. Adjusts alpha to get nominal coverage.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, BOP, internal
+#' @keywords internal
 #' @examples
 #' RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -98,7 +98,7 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #' generate BOP sets from Roy, Larocque 2019
 #'
 #' This function is primarily meant to be used within the RoyRF() function. All parameters are same as in RoyRF().
-#' @keywords random forest, internal
+#' @keywords internal
 #' @noRd
 #generates the BOP values for each prediction value
 genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
@@ -184,7 +184,7 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
 #'
 #' This function is primarily meant to be used within the RoyRF() function.
 #' @param BOP BOP object generated from genBOP() function.
-#' @keywords random forest, calibration, internal
+#' @keywords internal
 #' @examples
 #' genqInt <- function(BOP, alpha = alpha)
 #' @noRd
@@ -210,7 +210,7 @@ genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
 #'
 #' This function is primarily meant to be used within the RoyRF() function. Could ptentially result in non-contiguous intervals.
 #' @param BOP BOP object generated from genBOP() function.
-#' @keywords random forest, calibration, internal
+#' @keywords internal
 #' @noRd
 #HDI intervals using density estimation of BOP; outputs a list due to potential for HDI to be non-contiguous
 genHDInt <- function(BOP, alpha = alpha){
@@ -233,7 +233,7 @@ genHDInt <- function(BOP, alpha = alpha){
 #'
 #' This function is primarily meant to be used within the RoyRF() function.
 #' @param BOP BOP object generated from genBOP() function.
-#' @keywords random forest, calibration, internal
+#' @keywords internal
 #' @noRd
 #connects the noninterval HDI
 genCHDInt <- function(BOP, alpha = alpha){

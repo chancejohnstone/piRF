@@ -18,7 +18,7 @@
 #' @param max_depth maximum depth of each tree in RF. ranger parameter.
 #' @param replace Sample with replacement, or not. Utilized for the two different variants outlined in Ghosal, Hooker 2018. Currently variant 2 not implemented.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, internal
+#' @keywords internal
 #' @examples
 #' HDI_quantregforest <- function(formula = NULL, train_data = NULL, test_data = NULL, alpha = NULL,
 #' num_tree = NULL, mtry = NULL, min_node_size = NULL, max_depth = NULL, replace = TRUE, verbose = FALSE,

@@ -36,7 +36,7 @@
 #' @param prop Proportion of training data to sample for each tree. Currently variant 2 not implemented.
 #' @param variant Choose which variant to use. Currently variant 2 not implemented.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @keywords prediction interval, random forest, internal, conformal
+#' @keywords internal
 #' @import stats
 #' @examples
 #' CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,

@@ -54,7 +54,8 @@ rfint(
 
 \item{calibrate}{If \code{calibrate = TRUE}, intervals are calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for \code{method = "Roy"}.}
 
-\item{Roy_method}{Interval method for \code{method = "Roy"}. Options are \code{Roy_method = c("quantile", "HDI", "CHDI")}.}
+\item{Roy_method}{Interval method for \code{method = "Roy"}.
+Options are \code{Roy_method = c("quantile", "HDI", "CHDI")}.}
 
 \item{featureBias}{Remove feature bias. Only for \code{method = "Tung"}.}
 
@@ -72,7 +73,8 @@ rfint(
 
 \item{concise}{If  concise = TRUE, only predictions output. Defaults to \code{concise = FALSE}.}
 
-\item{interval_type}{Type of prediction interval to generate. Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.}
+\item{interval_type}{Type of prediction interval to generate.
+Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.}
 }
 \value{
 \item{\code{int}}{Default output. Includes prediction intervals for all methods in \code{methods}.}
@@ -126,7 +128,8 @@ test <- airfoil[-samp,]
 #generate prediction intervals
 res <- rfint(pressure ~ . , train_data = train, test_data = test,
              method = method_vec,
-             concise= FALSE)
+             concise= FALSE,
+             num_threads = 1)
 
 #empirical coverage, and average prediction interval length for each method
 coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
@@ -137,7 +140,8 @@ length
 #plotting intervals and predictions
 par(mfrow = c(2,2))
 for(i in 1:7){
-   col <- ((test$pressure >= res$int[[i]][,1]) * (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
+   col <- ((test$pressure >= res$int[[i]][,1]) *
+   (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
    plot(x = res$preds[[i]], y = test$pressure, pch = 20,
       col = "black", ylab = "true", xlab = "predicted", main = method_vec[i])
    abline(a = 0, b = 1)
@@ -173,9 +177,3 @@ Chancellor Johnstone
 
 Haozhe Zhang
 }
-\keyword{boosting,}
-\keyword{calibration}
-\keyword{forest,}
-\keyword{interval,}
-\keyword{prediction}
-\keyword{random}

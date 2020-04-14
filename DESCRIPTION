@@ -1,15 +1,17 @@
 Package: piRF
 Title: Prediction Intervals for Random Forests
-Version: 0.9.1.9000
+Version: 0.1.0
+Date: 2020-04-14
 Authors@R: 
     person(given = "Chancellor",
            family = "Johnstone",
-           role = c("aut", "cre"),
+           role = c("cre", "aut"),
            email = "chancellor.johnstone@gmail.com")
     person(given = "Haozhe",
            family = "Zhang",
-           role = c("aut", "cre"),
+           role = c("cre", "aut"),
            email = "haozhe.stat@gmail.com")
+Maintainer: Chancellor Johnstone <chancellor.johnstone@gmail.com>
 Description: Implements multiple prediction interval methodologies for random forests.
 License: GPL-3
 Encoding: UTF-8

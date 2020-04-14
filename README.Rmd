@@ -1,0 +1,122 @@
+---
+title: piRF - Prediction Intervals for Random Forests
+output: github_document
+author: Chancellor Johnstone and Haozhe Zhang
+bibliography: REFERENCES.bib
+nocite: | 
+  @roy2019prediction, @ghosal2018boosting, @zhu2019hdi, @zhang2019random, @meinshausen2006quantile, @romano2019conformalized, @tung2014bias, @breiman2001random, @lopez2008neural
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+## Introduction
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of *piRF* is to implement multiple state-of-the art random forest prediction interval methodologies in one complete package. Currently, the methods implemented can only be utilized within isolated packages, or the authors have not made a package publicly available. The package itself utilizes the functionality provided by the *ranger* package. 
+
+## Installation
+
+You can install the released version of *piRF* from [CRAN](https://CRAN.R-project.org) with:
+
+``` r
+install.packages("piRF")
+```
+
+And the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("chancejohnstone/piRF")
+```
+## Example
+
+This is a basic example which utilizes the *airfoil* dataset included with *piRF*. The dataset itself comes from [UCI Archive](https://archive.ics.uci.edu/ml/datasets/Airfoil+Self-Noise#). The NASA data set comprises different size NACA 0012 airfoils at various wind tunnel speeds and angles of attack.
+
+The follwoing functions are not exported by *piRF* but are used for this example.
+
+```{r example}
+library(piRF)
+## basic example code
+
+data(airfoil)
+head(airfoil)
+
+#functions to get average length and average coverage of output
+getPILength <- function(x){
+#average PI length across each set of predictions
+l <- x[,2] - x[,1]
+avg_l <- mean(l)
+return(avg_l)
+}
+
+getCoverage <- function(x, response){
+  #output coverage for test data
+  coverage <- sum((response >= x[,1]) * (response <= x[,2]))/length(response)
+  return(coverage)
+}
+```
+
+Prediction intervals are generated for each of the methods implemented using train and test datasets constructed from the *airfoil* data.
+
+```{r}
+method_vec <- c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal")
+#generate train and test data
+set.seed(2020)
+ratio <- .975
+nrow <- nrow(airfoil)
+n <- floor(nrow*ratio)
+samp <- sample(1:nrow, size = n)
+train <- airfoil[samp,]
+test <- airfoil[-samp,]
+
+#generate prediction intervals
+res <- rfint(pressure ~ . , train_data = train, test_data = test,
+             method = method_vec,
+             concise= FALSE,
+             num_threads = 2)
+```
+
+In this example, the *num_threads* option identifies the use of two cores for parallel processing. The default is to use all available cores. The *concise* option allows for the output of predictions for the test observations.
+
+Below are the coverage rates and average prediction interval lengths using the test dataset. Both are important characteristics of prediction intervals.
+
+```{r}
+#empirical coverage, and average prediction interval length for each method
+coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
+coverage
+length <- sapply(res$int, FUN = getPILength)
+length
+```
+
+Below are plots of the resulting prediction intervals generated for each method.
+
+```{r}
+#plotting intervals and predictions
+par(mfrow = c(2,2))
+for(i in 1:7){
+   col <- ((test$pressure >= res$int[[i]][,1]) *
+   (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
+   plot(x = res$preds[[i]], y = test$pressure, pch = 20,
+      col = "black", ylab = "true", xlab = "predicted", main = method_vec[i])
+   abline(a = 0, b = 1)
+   segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
+      y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
+}
+```
+
+If you find any issues with the package, or have suggestions for improvements, please let us know. 
+
+##References
+
+
