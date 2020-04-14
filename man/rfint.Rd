@@ -15,7 +15,7 @@ rfint(
   m_try = 2,
   num_trees = 500,
   min_node_size = 5,
-  num_threads = detectCores(),
+  num_threads = parallel::detectCores(),
   calibrate = FALSE,
   Roy_method = "quantile",
   featureBias = TRUE,
@@ -26,8 +26,7 @@ rfint(
   Ghosal_num_stages = 2,
   prop = 0.618,
   concise = TRUE,
-  interval_type = "two-sided",
-  ...
+  interval_type = "two-sided"
 )
 }
 \arguments{
@@ -61,6 +60,8 @@ rfint(
 
 \item{predictionBias}{Remove prediction bias. Only for \code{method = "Tung"}.}
 
+\item{Tung_R}{Number of repetitions used in bias removal. Only for \code{method = "Tung"}.}
+
 \item{Tung_num_trees}{Number of trees used in bias removal. Only for \code{method = "Tung"}.}
 
 \item{variant}{Choose which variant to use. Only for \code{method = "Ghosal"}. Currently variant 2 not implemented.}
@@ -72,10 +73,6 @@ rfint(
 \item{concise}{If  concise = TRUE, only predictions output. Defaults to \code{concise = FALSE}.}
 
 \item{interval_type}{Type of prediction interval to generate. Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.}
-
-\item{replace}{Sample with replacement, or without. Utilized for the two different variants outlined in \code{method = "Ghosal"}. Currently variant 2 not implemented.}
-
-\item{TungR}{Number of repetitions used in bias removal. Only for \code{method = "Tung"}.}
 }
 \value{
 \item{\code{int}}{Default output. Includes prediction intervals for all methods in \code{methods}.}
@@ -157,10 +154,6 @@ for(i in 1:7){
 \link[ranger]{ranger}
 
 \link[rfinterval]{rfinterval}
-
-\link[boostedForest]{fit}
-
-\link[boostedForest]{output}
 }
 \author{
 Chancellor Johnstone

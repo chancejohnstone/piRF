@@ -46,14 +46,9 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
                   tolerance = NULL, step_percent = NULL, under = NULL, method = NULL,
                   max_iter = NULL, interval_type = NULL){
 
-  #garbage collection
-  #gc()
-
   #parse formula
   if (!is.null(formula)) {
-    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
-    #orders train_data by response
-    #train_data <- train_data[order(train_data[,1]), ]
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
   } else {
     stop("Error: Please give formula!")
   }
@@ -61,7 +56,7 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   #get dependent variable
   dep <- names(train_data)[1]
 
-  rf <- ranger(formula, data = train_data, num.trees = num_trees,
+  rf <- ranger::ranger(formula, data = train_data, num.trees = num_trees,
                    min.node.size = min_node_size, mtry = m_try,
                    keep.inbag = keep_inbag, num.threads = num_threads)
 
@@ -79,7 +74,6 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 
     if (calibrate) {
       #adjust alpha based on calibration; use calibrate() function
-      #allow parameters to be adjusted through the RoyRF() function; change this
       alpha <- calibrate(oobBOP, alpha = alpha, response_data = train_data[,dep], tolerance = tolerance,
                          step_percent = step_percent, under = under, method = method,
                          max_iter = max_iter)
@@ -98,7 +92,6 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
     rf$oobBOP <- oobBOP
   }
 
-  #do we need to output alpha? (maybe if we calibrate...)
   return(list(preds = rf_preds, pred_intervals = rf$int, alpha = alpha))
 }
 
@@ -108,12 +101,15 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #' @keywords random forest, internal
 #' @noRd
 #generates the BOP values for each prediction value
-#maybe we could separate this into a genOOB function vs. a genBOP function?
-#allows for use elsewhere...
-#seems that this function is very slow...
 genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
                    pred_data, train_data, num_threads = num_threads,
                    calibrate = calibrate){
+
+  #define %dopar% locally
+  `%dopar%` <- foreach::`%dopar%`
+
+  #declare index variables for foreach loop
+  i <- j <- NULL
 
   #pred_data <- train_data
   npred <- dim(pred_data)[1]
@@ -121,14 +117,12 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
   B <- rf$num.trees
 
   #get dependent variable name
-  #dep <- names(train_data)[!(names(train_data) %in% rf$forest$independent.variable.names)]
   dep <- names(train_data)[1]
 
-  #terminal nodes for all new preds and training data, probably dont need this to happen everytime...
+  #terminal nodes for all new preds and training data
   term_nodes <- predict(rf, rbind(pred_data, train_data), type = "terminalNodes", num.threads = num_threads)$predictions
 
   #getting oob index for each training data point
-  #changed from num_trees to B; see if it messes up anything...
   oob <- unlist(rf$inbag.counts)
   dim(oob) <- c(B, dim(train_data)[1])
   oob <- t(oob)
@@ -136,12 +130,11 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
   oob[oob == FALSE] <- NA
 
   #getting BOP list for each x value
-  #need to oobBOP for train_data, not just pred_data
   BOP <- list()
   oobBOP <- list()
 
   #done in parallel
-  BOP <- foreach(i = 1:npred) %dopar% {
+  BOP <- foreach::foreach(i = 1:npred) %dopar% {
     #terminal node within each tree; compare to trees of training data only
     pred_nodes <- term_nodes[i,]
     pred_same <- term_nodes[(npred+1):ntotal,] == pred_nodes
@@ -150,16 +143,12 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
     #get matching dependent variable values; doing oob as well
     hold <- as.vector(train_data[dep][,1])
     dep_rep <- matrix(hold, ncol=B, nrow=length(hold), byrow=FALSE)
-    #oob_rep <- matrix(oob[i,], ncol=B, nrow=length(hold), byrow=TRUE)
     dep_vals <- dep_rep * pred_same
-    #oob_dep_vals <- dep_rep * pred_same * oob_rep
 
     #get unique node values from each bag;
     #combine into one collection of BOP values for each new data point
     unq_dep_vals <- unlist(apply(dep_vals, FUN = unique, MARGIN = 2))
-    #oob_unq_dep_vals <- unlist(apply(oob_dep_vals, FUN = unique, MARGIN = 2))
     BOP <- unq_dep_vals[is.na(unq_dep_vals) == FALSE]
-    #oobBOP[[i]] <- oob_unq_dep_vals[is.na(oob_unq_dep_vals) == FALSE]
     BOP
   }
 
@@ -168,7 +157,7 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
   #computationally expensive with large train dataset
   #allow for a subsample to be random selected instead of oobBOP being generated for each train observation
   if(calibrate){
-    oobBOP <- foreach(j = 1:ntrain) %dopar% {
+    oobBOP <- foreach::foreach(j = 1:ntrain) %dopar% {
       #terminal node within each tree; compare to trees of training data only
       pred_nodes <- term_nodes[(npred+j),]
       pred_same <- term_nodes[(npred+1):ntotal,] == pred_nodes
@@ -187,10 +176,6 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
       oobBOP
     }
   } else {oobBOP <- NULL}
-
-  #end <- Sys.time()
-  #print(difftime(end,start, units = "secs"))
-  #print(BOP)
 
   return(list(BOP = BOP, oobBOP = oobBOP, dep = dep))
 }
@@ -229,6 +214,10 @@ genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
 #' @noRd
 #HDI intervals using density estimation of BOP; outputs a list due to potential for HDI to be non-contiguous
 genHDInt <- function(BOP, alpha = alpha){
+
+  #getting hdr function from hdrcde package
+  hdr <- hdrcde::hdr
+
   hdi <- list()
   hdi_list <- lapply(BOP, FUN = hdr, prob = 1*100-alpha*100)
 

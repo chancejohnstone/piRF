@@ -18,11 +18,6 @@
 ##
 ## --------------------------
 
-#require(ranger)
-#require(dplyr)
-#require(reshape2)
-
-
 #' implements RF prediction interval using split conformal prediction as outlined in Romano, Patterson, Candes 2018.
 #'
 #' This function implements split conformal prediction intervals for RFs.
@@ -42,6 +37,7 @@
 #' @param variant Choose which variant to use. Currently variant 2 not implemented.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
 #' @keywords prediction interval, random forest, internal, conformal
+#' @import stats
 #' @examples
 #' CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
 #' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
@@ -61,9 +57,7 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
 
   #parse formula
   if (!is.null(formula)) {
-    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
-    #orders train_data by response
-    #train_data <- train_data[order(train_data[,1]), ]
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
   } else {
     stop("Error: Please give formula!")
   }
@@ -83,13 +77,10 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
   I2 <- train_data[!not_test,]
 
   #train on I1
-  rf <- ranger(formula, data = I1, num.trees = num_trees,
+  rf <- ranger::ranger(formula, data = I1, num.trees = num_trees,
                min.node.size = min_node_size, mtry = m_try,
                keep.inbag = keep_inbag, quantreg = TRUE,
                num.threads = num_threads)
-
-  #print(names(I2))
-  #print(dep)
 
   #get conformity scores for everything in I2
   quant_preds <- predict(rf, I2, type = 'quantiles', quantiles = c(alpha/2, 1-alpha/2), num.threads = num_threads)

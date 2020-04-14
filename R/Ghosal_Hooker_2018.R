@@ -42,39 +42,6 @@
 #' replace = TRUE, prop = 1, variant = 1,
 #' num_threads = num_threads)
 #' @noRd
-
-###testing###
-#source("C:/Users/thechanceyman/Documents/RFIntervals/R/Simulation Functions.R")
-
-#n <- 100
-#ratio <- 2/3
-#p <- 10
-#full_n <- n*1/ratio
-#x_data <- data_gen(full_n)
-#colnames(x_data) <- paste0("X", 1:p)
-#response <- linear_func(x_data) + rnorm(full_n, 0, 1)
-#full_data <- cbind(response, x_data)
-
-#train/test datasets
-#subset <- sample(1:full_n, size = round(ratio*full_n))
-#train <- as.data.frame(full_data[subset,])
-#test <- as.data.frame(full_data[-subset,])
-
-#formula <- response ~.
-#train_data <- train
-#pred_data <- test
-#num_trees <- 500
-#min_node_size <- NULL
-#m_try <- NULL
-#keep_inbag <- TRUE
-#intervals <- FALSE
-#alpha <- .1
-#prop <- .66
-#variant <- 2
-#num_threads <- NULL
-#num_stages <- 5
-###
-
 GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                           min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                           intervals = FALSE, alpha = NULL, prop = NULL, variant = 1,
@@ -83,7 +50,7 @@ GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, n
 
   #parse formula
   if (!is.null(formula)) {
-    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
   } else {
     stop("Error: Please give formula!")
   }
@@ -129,7 +96,7 @@ genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_t
   replace <- FALSE
 
   #generate feature weights first
-  rf <- ranger(formula, data = train_data, num.trees = num_trees,
+  rf <- ranger::ranger(formula, data = train_data, num.trees = num_trees,
                min.node.size = min_node_size, mtry = m_try,
                keep.inbag = keep_inbag, importance = importance, split.select.weights = weights,
                replace = replace, sample.fraction = ifelse(replace, 1, prop), inbag = inbag, num.threads = num_threads)
@@ -320,4 +287,3 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
               mse = mse_est))
 }
 
-#variance much lower in trees when compared to boostedForest; check this out...

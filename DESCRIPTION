@@ -1,6 +1,6 @@
 Package: piRF
 Title: Prediction Intervals for Random Forests
-Version: 0.5.1.9000
+Version: 0.9.1.9000
 Authors@R: 
     person(given = "Chancellor",
            family = "Johnstone",
@@ -13,6 +13,15 @@ Authors@R:
 Description: Implements multiple prediction interval methodologies for random forests.
 License: GPL-3
 Encoding: UTF-8
+Depends:
+  R (>= 2.10)
+Suggests:
+    foreach,
+    doParallel,
+    hdrcde,
+    rfinterval,
+    ranger
+URL: http://github.com/chancejohnstone/piRF
 LazyData: true
 RoxygenNote: 7.0.2
 Imports: Rdpack

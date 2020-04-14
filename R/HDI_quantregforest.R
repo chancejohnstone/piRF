@@ -34,12 +34,11 @@ HDI_quantregforest <- function(formula = NULL,
                                max_depth = NULL,
                                replace = TRUE,
                                verbose = FALSE,
-                               num_threads = NULL,
-                               ...){
+                               num_threads = NULL){
 
   ## sort the response of training data by ascending order
   if (!is.null(formula)) {
-    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
     train_data <- train_data[order(train_data[,1]), ]
   } else {
     stop("Error: Please give formula!")
@@ -59,7 +58,7 @@ HDI_quantregforest <- function(formula = NULL,
   if (any(is.na(test_data))) stop("NA not permitted in the test data")
 
   ## train a random forest via ranger
-  rf <- ranger:::ranger(formula = formula,
+  rf <- ranger::ranger(formula = formula,
                         data = train_data,
                         num.trees = num_tree,
                         mtry = mtry,
@@ -138,11 +137,3 @@ HDI_quantregforest <- function(formula = NULL,
   return(list(preds = preds, pred_intervals = pred_int, test_weights = test_weights))
 }
 
-## Test HDI_quantregforest function
-#library(rfinterval)
-
-#HDI_quantregforest(pm2.5~.,train_data = BeijingPM25[1:8000,],
-#                   test_data = BeijingPM25[8001:8661,],
-#                   alpha = 0.05,num_tree = 500, mtry = 8,
-#                   min_node_size = 5, max_depth = 10,
-#                   replace = TRUE,verbose = TRUE)

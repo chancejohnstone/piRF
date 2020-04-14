@@ -52,12 +52,9 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
                     alpha = NULL, forest_type = "QRF", featureBias = TRUE, predictionBias = TRUE, R = NULL,
                     num_threads = NULL, interval_type = NULL){
 
-  #garbage collection
-  gc()
-
   #parse formula
   if (!is.null(formula)) {
-    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
     #orders train_data by response
     #train_data <- train_data[order(train_data[,1]), ]
   } else {
@@ -105,7 +102,7 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   #why does genRF need pred_data? it shouldn't if it is just generating a forest?
   #parse formula
   if (!is.null(formula)) {
-    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
     #orders train_data by response
     #train_data <- train_data[order(train_data[,1]), ]
   } else {
@@ -117,7 +114,7 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   } else {quantreg <- FALSE}
 
   #generate feature weights first
-  rf <- ranger(formula, data = train_data, num.trees = num_trees,
+  rf <- ranger::ranger(formula, data = train_data, num.trees = num_trees,
                min.node.size = min_node_size, mtry = m_try,
                keep.inbag = keep_inbag, quantreg = quantreg,
                importance = importance, split.select.weights = weights,
@@ -136,6 +133,12 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
                        intervals = TRUE, alpha = alpha, forest_type = "RF", importance = "permutation",
                        R = R, num_threads = num_threads){
 
+  #define %dopar% locally
+  `%dopar%` <- foreach::`%dopar%`
+
+  #declare index variables for foreach loop
+  i <- NULL
+
   artif_features <- list()
 
   #adjust this; currently includes an artifical response...
@@ -143,7 +146,7 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
   n <- dim(train_data)[1]
 
   #sample from training data within a feature; R replications
-  vi <- foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger")) %dopar% {
+  vi <- foreach::foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger")) %dopar% {
     #need to remove dependent variable?
     artif_features[[i]] <- apply(train_data, FUN = sample, MARGIN = 2, size = n, replace = FALSE)
     colnames(artif_features[[i]]) <- paste0("a_", names(train_data))
@@ -169,9 +172,6 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
   #normalized weights; [0,1]
   weights <- (vi_hat - min(vi_hat))/ (max(vi_hat) - min(vi_hat))
 
-  #do this normalizing method for now
-  #weights <- vi_hat / sum(vi_hat)
-
   return(weights)
 }
 
@@ -181,7 +181,6 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
 #' @keywords random forest, internal
 #' @noRd
 #prediction bias correction; two stage random forest; takes first stage rf object as input
-#rf <- test$rf$stage1rf
 predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                            min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                            intervals = TRUE,
@@ -196,11 +195,9 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
     alpha <- alpha*2
   }
 
-  #calibrate unused currently; implemented for QRF so foresttype not neccessary
-  #generalize for RF?
   #parse formula
   if (!is.null(formula)) {
-    train_data <- ranger:::parse.formula(formula, data = train_data, env = parent.frame())
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
     #orders train_data by response
     #train_data <- train_data[order(train_data[,1]), ]
   } else {
@@ -256,9 +253,6 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
   #print(bias_correct_preds)
 
   return(list(stage1rf = rf, stage2rf = rf2, bias = bias, preds = bias_correct_preds))
-
-  #should we work on outputting details related to the bias corrected predictions?
-  #in a similar format to ranger?
 
 }
 
