@@ -146,7 +146,8 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
   n <- dim(train_data)[1]
 
   #sample from training data within a feature; R replications
-  vi <- foreach::foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger::ranger")) %dopar% {
+  ranger <- ranger::ranger
+  vi <- foreach::foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger")) %dopar% {
     #need to remove dependent variable?
     artif_features[[i]] <- apply(train_data, FUN = sample, MARGIN = 2, size = n, replace = FALSE)
     colnames(artif_features[[i]]) <- paste0("a_", names(train_data))

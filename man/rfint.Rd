@@ -79,7 +79,20 @@ rfint(
    \item{\code{preds}}{Predictions for test data for all methods in \code{methods}. Output when \code{concise = FALSE}.}
 }
 \description{
-Implements seven different random forest prediction interval methods, and their variants.
+Implements seven different random forest prediction interval methods.
+}
+\details{
+The seven methods implemented are cited in the References section.
+Additional information can be found within those references.
+Each of these methods are implemented by utilizing the ranger package.
+For \code{method = "Zhang"}, prediction intervals are generated using out-of-bag residuals.
+\code{method = "Romano"} perform utilizes a split-conformal approach.
+\code{method = "Roy"} uses a bag-of-predictors approach.
+\code{method = "Ghosal"} performs boosting to reduce bias in the random forest, and estimates variance.
+The authors provide mutliple variants to their methodology.
+\code{method = "Tung"} debiases feature selection and prediction. Prediction intervals are generated using quantile regression forests.
+\code{method = "HDI"} delivers prediction intervals through highest-density interval regression forests.
+\code{method = "quantile"} utilizes quantile regression forests.
 }
 \examples{
 \donttest{
