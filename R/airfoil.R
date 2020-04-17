@@ -16,7 +16,7 @@
 #' Master's thesis, Department of Aeronautics.
 #' Imperial College of Science, Technology and Medicine (London, United Kingdom), 2006.
 
-#' @references R. Lopez.
+#' @references Lopez, R. and Balsa-Canto, E. and Onate, E.
 #' Neural Networks for Variational Problems in Engineering.
 #' PhD Thesis, Technical University of Catalonia, 2008.
 #'

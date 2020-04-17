@@ -1,7 +1,7 @@
 Package: piRF
 Title: Prediction Intervals for Random Forests
 Version: 0.1.0
-Date: 2020-04-14
+Date: 2020-04-17
 Authors@R: 
     c(person(given = "Chancellor",
            family = "Johnstone",
@@ -10,9 +10,31 @@ Authors@R:
     person(given = "Haozhe",
            family = "Zhang",
            role = c("aut"),
-           email = "haozhe.stat@gmail.com"))
+           email = "haozhe.stat@gmail.com"),
+    person(given = "Martin",
+           family = "Wright",
+           role = c("ctb", "cph"),
+	   email = "cran@wrig.de"),
+    person(given = "Gregor",
+           family = "DeCillia",
+           role = c("ctb", "cph"))
 Maintainer: Chancellor Johnstone <chancellor.johnstone@gmail.com>
-Description: Implements multiple prediction interval methodologies for random forests.
+Description: Implements multiple state-of-the-art prediction interval methodologies for random forests. 
+	These include: quantile regression intervals, out-of-bag intervals, bag-of-observations intervals, 
+	one-step boosted random forest intervals, bias-corrected intervals, high-density intervals, 
+	and split-conformal intervals. The implementations include a combination of novel adjustments to the 
+	original random forest methodology and novel prediction interval methodologies. All of these 
+	methodologies can be utilized using solely this package, rather than a collection of separate packages. 
+	Currently, only regression trees are supported. Also capable of handling high dimensional data. 
+Breiman, Leo (2001) <doi:10.1023/A:1010933404324>
+Roy, Marie-H{\'e}l{\`e}ne and Larocque, Denis (2019) <doi:10.1177/0962280219829885>
+Ghosal, Indrayudh and Hooker, Giles (2018) <arXiv:1803.08000>
+Zhu, Lin and Lu, Jiaxin and Chen, Yihong (2019) <arXiv:1905.10101>
+Zhang, Haozhe and Zimmerman, Joshua and Nettleton, Dan and Nordman, Daniel J. (2019) <doi:10.1080/00031305.2019.1585288>
+Meinshausen, Nicolai (2006) <doi:10.5555/1248547.1248582>
+Romano, Yaniv and Patterson, Evan and Candes, Emmanuel (2019) <arXiv:1905.03222>
+Tung, Nguyen Thanh and Huang, Joshua Zhexue and Nguyen, Thuy Thi and Khan, Imran (2014) <doi:10.13140/2.1.2500.8002>
+Lopez, Roberto and Balsa-Canto, E. and Onate, E. (2008) <doi:10.1002/nme.2304>
 License: GPL-3
 Encoding: UTF-8
 Depends:
