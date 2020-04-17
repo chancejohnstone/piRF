@@ -137,12 +137,17 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
   BOP <- foreach::foreach(i = 1:npred) %dopar% {
     #terminal node within each tree; compare to trees of training data only
     pred_nodes <- term_nodes[i,]
+
+    #chance to matrix form
+    pred_nodes <- t(matrix(pred_nodes, ncol = ntotal - npred, nrow = B))
+
     pred_same <- term_nodes[(npred+1):ntotal,] == pred_nodes
     pred_same[pred_same == FALSE] <- NA
 
     #get matching dependent variable values; doing oob as well
     hold <- as.vector(train_data[dep][,1])
-    dep_rep <- matrix(hold, ncol=B, nrow=length(hold), byrow=FALSE)
+    #dep_rep <- matrix(hold, ncol=B, nrow=length(hold), byrow=FALSE)
+    dep_rep <- t(matrix(hold, nrow=B, ncol=length(hold), byrow = TRUE))
     dep_vals <- dep_rep * pred_same
 
     #get unique node values from each bag;
@@ -160,12 +165,16 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
     oobBOP <- foreach::foreach(j = 1:ntrain) %dopar% {
       #terminal node within each tree; compare to trees of training data only
       pred_nodes <- term_nodes[(npred+j),]
+
+      #chance to matrix form
+      pred_nodes <- t(matrix(pred_nodes, ncol = ntotal - npred, nrow = B))
+
       pred_same <- term_nodes[(npred+1):ntotal,] == pred_nodes
       pred_same[pred_same == FALSE] <- NA
 
       #get matching dependent variable values; doing oob as well
       hold <- as.vector(train_data[dep][,1])
-      dep_rep <- matrix(hold, ncol=B, nrow=length(hold), byrow=FALSE)
+      dep_rep <- t(matrix(hold, nrow=B, ncol=length(hold), byrow = TRUE))
       oob_rep <- matrix(oob[j,], ncol=B, nrow=length(hold), byrow=TRUE)
       oob_dep_vals <- dep_rep * pred_same * oob_rep
 

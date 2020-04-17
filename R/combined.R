@@ -24,7 +24,7 @@
 #' \code{method = "Romano"} utilizes a split-conformal approach.
 #' \code{method = "Roy"} uses a bag-of-predictors approach.
 #' \code{method = "Ghosal"} performs boosting to reduce bias in the random forest, and estimates variance.
-#' The authors provide mutliple variants to their methodology.
+#' The authors provide multiple variants to their methodology.
 #' \code{method = "Tung"} debiases feature selection and prediction. Prediction intervals are generated using quantile regression forests.
 #' \code{method = "HDI"} delivers prediction intervals through highest-density interval regression forests.
 #' \code{method = "quantile"} utilizes quantile regression forests.
