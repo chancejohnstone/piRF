@@ -91,11 +91,11 @@ Below are the coverage rates and average prediction interval lengths using the t
 coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
 coverage
 #>  quantile     Zhang      Tung    Romano       Roy       HDI    Ghosal 
-#> 0.8947368 0.8947368 0.8947368 0.8421053 0.7894737 0.9210526 0.9736842
+#> 0.8947368 0.8947368 0.9210526 0.8421053 0.9210526 0.9473684 0.9736842
 length <- sapply(res$int, FUN = getPILength)
 length
 #>  quantile     Zhang      Tung    Romano       Roy       HDI    Ghosal 
-#> 10.233720  7.035656  7.627004  9.746129 22.071349 10.007263  9.001089
+#> 10.233720  7.035656  7.685408 10.210230 11.528808 10.048658  8.946733
 ```
 
 Below are plots of the resulting prediction intervals generated for each method.
