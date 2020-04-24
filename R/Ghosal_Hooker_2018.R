@@ -200,11 +200,25 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
   #add variance estimate procedure for variant 2; requires estimates, and inbag for each stage...
 
   #one sided intervals
+  #if(interval_type == "two-sided"){
+  #  alpha <- alpha
+  #} else {
+  #  alpha <- alpha*2
+  #}
+
+  #one sided intervals
   if(interval_type == "two-sided"){
-    alpha <- alpha
+    alpha1 <- alpha/2
+    alpha2 <- 1-alpha/2
+  } else if(interval_type == "upper"){
+    alpha1 <- 0
+    alpha2 <- 1-alpha
   } else {
-    alpha <- alpha*2
+    alpha1 <- alpha
+    alpha2 <- 1
   }
+
+
 
   #includes original rf
   num_stages <- length(boostRF$boostrf)
@@ -280,8 +294,8 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
   #need estimate of MSE; need (oob?) predictions of train_data
   mse_est <- sum((boostRF$train_preds - train_data[,dep])^2)/n
 
-  pred_intervals <- cbind(boostRF$preds + qnorm(alpha/2)*sqrt(var_est + mse_est),
-                          boostRF$preds + qnorm(1-alpha/2)*sqrt(var_est + mse_est))
+  pred_intervals <- cbind(boostRF$preds + qnorm(alpha1)*sqrt(var_est + mse_est),
+                          boostRF$preds + qnorm(alpha2)*sqrt(var_est + mse_est))
 
   return(list(preds = boostRF$preds, pred_intervals = pred_intervals, var_est = var_est,
               mse = mse_est))

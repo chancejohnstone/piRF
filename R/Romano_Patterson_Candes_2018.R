@@ -49,10 +49,22 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
                  interval_type = NULL){
 
   #one sided intervals
+  #if(interval_type == "two-sided"){
+  #  alpha <- alpha
+  #} else {
+  #  alpha <- alpha*2
+  #}
+
+  #one sided intervals
   if(interval_type == "two-sided"){
-    alpha <- alpha
+    alpha1 <- alpha/2
+    alpha2 <- 1-alpha/2
+  } else if(interval_type == "upper"){
+    alpha1 <- 0
+    alpha2 <- 1-alpha
   } else {
-    alpha <- alpha*2
+    alpha1 <- alpha
+    alpha2 <- 1
   }
 
   #parse formula
@@ -83,7 +95,7 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
                num.threads = num_threads)
 
   #get conformity scores for everything in I2
-  quant_preds <- predict(rf, I2, type = 'quantiles', quantiles = c(alpha/2, 1-alpha/2), num.threads = num_threads)
+  quant_preds <- predict(rf, I2, type = 'quantiles', quantiles = c(alpha1, alpha2), num.threads = num_threads)
 
   E <- cbind(quant_preds$predictions[,1] - I2[,dep], I2[,dep] - quant_preds$predictions[,2])
 
@@ -91,7 +103,7 @@ CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees 
   maxE <- apply(E, FUN = max, MARGIN = 1)
 
   #get median as well...
-  preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha/2, 0.5, 1-alpha/2), num.threads = num_threads)
+  preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha1, 0.5, alpha2), num.threads = num_threads)
   Q <- quantile(maxE, probs = 1 - (alpha/2 + alpha/2))
   intervals <- cbind(preds$predictions[,1] - Q, preds$predictions[,3] + Q)
 

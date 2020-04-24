@@ -190,10 +190,22 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
 
 
   #one sided intervals
+  #if(interval_type == "two-sided"){
+  #  alpha <- alpha
+  #} else {
+  #  alpha <- alpha*2
+  #}
+
+  #one sided intervals
   if(interval_type == "two-sided"){
-    alpha <- alpha
+    alpha1 <- alpha/2
+    alpha2 <- 1-alpha/2
+  } else if(interval_type == "upper"){
+    alpha1 <- 0
+    alpha2 <- 1-alpha
   } else {
-    alpha <- alpha*2
+    alpha1 <- alpha
+    alpha2 <- 1
   }
 
   #parse formula
@@ -229,7 +241,7 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
   colnames(bias) <- "bias"
 
   #get new predictions; always get median...
-  stage1_preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha/2, .5, 1-alpha/2), num.threads = num_threads)
+  stage1_preds <- predict(rf, pred_data, type = "quantiles", quantiles = c(alpha1, .5, alpha2), num.threads = num_threads)
 
   drop <- names(train_data) %in% dep
   aug_train_data <- cbind(bias, train_data[,!drop])

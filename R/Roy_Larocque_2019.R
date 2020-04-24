@@ -201,13 +201,25 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
 genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
 
   #one sided intervals
+  #if(interval_type == "two-sided"){
+  #  alpha <- alpha
+  #} else {
+  #  alpha <- alpha*2
+  #}
+
+  #one sided intervals
   if(interval_type == "two-sided"){
-    alpha <- alpha
+    alpha1 <- alpha/2
+    alpha2 <- 1-alpha/2
+  } else if(interval_type == "upper"){
+    alpha1 <- 0
+    alpha2 <- 1-alpha
   } else {
-    alpha <- alpha*2
+    alpha1 <- alpha
+    alpha2 <- 1
   }
 
-  q <- unlist(lapply(BOP, FUN = quantile, probs = c(alpha/2, 1-alpha/2)))
+  q <- unlist(lapply(BOP, FUN = quantile, probs = c(alpha1, alpha2)))
   dim(q) <- c(2, length(q)/2)
   q <- t(q)
 

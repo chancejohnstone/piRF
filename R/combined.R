@@ -115,6 +115,7 @@
 #'    segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
 #'       y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
 #' }
+#' par(opar)
 #' }
 #' @references
 #' \insertRef{breiman2001random}{piRF}
@@ -174,6 +175,18 @@ rfint <- function(formula = formula,
   res <- list()
   int <- list()
   pred <- list()
+
+  #one sided intervals
+  if(interval_type == "two-sided"){
+    alpha1 <- alpha/2
+    alpha2 <- 1-alpha/2
+  } else if(interval_type == "upper"){
+    alpha1 <- 0
+    alpha2 <- 1-alpha
+  } else {
+    alpha1 <- alpha
+    alpha2 <- 1
+  }
 
   #tracking list
   for(id in method){
@@ -239,7 +252,7 @@ rfint <- function(formula = formula,
                     quantreg = TRUE, num.threads = num_threads)
 
       #need to do this with predict for quantReg with ranger
-      pred[[id]] <- predict(res[[id]], test_data, type = "quantiles", quantiles = c(alpha/2, 0.5, 1 - alpha/2))$predictions
+      pred[[id]] <- predict(res[[id]], test_data, type = "quantiles", quantiles = c(alpha1, 0.5, alpha2))$predictions
       int[[id]] <- pred[[id]][,c(1,3)]
       #save only median
       pred[[id]] <- pred[[id]][,2]

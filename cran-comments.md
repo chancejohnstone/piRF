@@ -4,3 +4,9 @@
 -Added creators of formula.R as contributors and copyright holders. 
 Additional license not added because their code holds the same license (GPL-3).
 
+04-24-2020
+-Fixed invalid DOIs; replaced with url
+-Changed author name to UTF-8
+-Changed par() setting back to default after example
+-Code adjusted in combined.R and Roy_Larocque_2019.R
+
