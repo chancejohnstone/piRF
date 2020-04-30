@@ -147,7 +147,7 @@ rfint <- function(formula = formula,
                   num_threads = parallel::detectCores(),
                   calibrate = FALSE,
                   Roy_method = "quantile",
-                  featureBias = TRUE,
+                  featureBias = FALSE,
                   predictionBias = TRUE,
                   Tung_R = 5,
                   Tung_num_trees = 75,
@@ -221,7 +221,7 @@ rfint <- function(formula = formula,
       res[[id]] <- TungUbRF(formula = formula, train_data = train_data, pred_data = test_data,
                       num_trees = num_trees, feature_num_trees = Tung_num_trees,
                       min_node_size = min_node_size, m_try = m_try, alpha = alpha, forest_type = "QRF",
-                      featureBias = TRUE, predictionBias = TRUE,
+                      featureBias = featureBias, predictionBias = predictionBias,
                       R = Tung_R, num_threads = num_threads, interval_type = interval_type)
 
       pred[[id]] <- res[[id]]$preds
