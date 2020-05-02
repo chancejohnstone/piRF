@@ -10,6 +10,9 @@ Additional license not added because their code holds the same license (GPL-3).
 -Changed par() setting back to default after example
 -Code adjusted in combined.R and Roy_Larocque_2019.R
 
-04-24-202
+04-24-2020
 -Fixed invalid url with working url
 
+05-02-2020
+-Added C Johnstone, and H Zhang as cph in DESCRIPTION
+-Correctly reverted par() setting back to original after example

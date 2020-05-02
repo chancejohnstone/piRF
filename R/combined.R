@@ -104,6 +104,9 @@
 #' length <- sapply(res$int, FUN = getPILength)
 #' length
 #'
+#' #get current mfrow setting
+#' opar <- par(mfrow = c(2,2))
+#'
 #' #plotting intervals and predictions
 #' par(mfrow = c(2,2))
 #' for(i in 1:7){
@@ -115,7 +118,7 @@
 #'    segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
 #'       y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
 #' }
-#' par(opar)
+#' par(par)
 #' }
 #' @references
 #' \insertRef{breiman2001random}{piRF}

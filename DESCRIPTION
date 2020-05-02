@@ -5,11 +5,11 @@ Date: 2020-04-17
 Authors@R: 
     c(person(given = "Chancellor",
 	     family = "Johnstone",
-	     role = c("cre", "aut"),
+	     role = c("cre", "aut", "cph"),
 	     email = "chancellor.johnstone@gmail.com"),
       person(given = "Haozhe",
 	     family = "Zhang",
-	     role = c("aut"),
+	     role = c("aut", "cph"),
 	     email = "haozhe.stat@gmail.com"),
       person(given = "Martin",
 	     family = "Wright",
