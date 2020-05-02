@@ -108,7 +108,6 @@
 #' opar <- par(mfrow = c(2,2))
 #'
 #' #plotting intervals and predictions
-#' par(mfrow = c(2,2))
 #' for(i in 1:7){
 #'    col <- ((test$pressure >= res$int[[i]][,1]) *
 #'    (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
