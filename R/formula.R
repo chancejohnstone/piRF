@@ -10,7 +10,6 @@
 #' @param data Training data of class \code{data.frame}.
 #' @param env The environment in which the left hand side of \code{formula} is evaluated.
 #' @return Dataset including selected columns and interactions.
-#' @noRd
 parse.formula <- function(formula, data, env = parent.frame()) {
   f <- as.formula(formula)
   t <- terms(f, data = data)

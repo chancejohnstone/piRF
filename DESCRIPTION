@@ -26,7 +26,6 @@ Description: Implements multiple state-of-the-art prediction interval methodolog
 	original random forest methodology and novel prediction interval methodologies. All of these 
 	methodologies can be utilized using solely this package, rather than a collection of separate 
 	packages. Currently, only regression trees are supported. Also capable of handling high dimensional data. 
-	Breiman, Leo (2001) <doi:10.1023/A:1010933404324>.
 	Roy, Marie-Helene and Larocque, Denis (2019) <doi:10.1177/0962280219829885>.
 	Ghosal, Indrayudh and Hooker, Giles (2018) <arXiv:1803.08000>.
 	Zhu, Lin and Lu, Jiaxin and Chen, Yihong (2019) <arXiv:1905.10101>.
@@ -34,7 +33,6 @@ Description: Implements multiple state-of-the-art prediction interval methodolog
 	Meinshausen, Nicolai (2006) <http://www.jmlr.org/papers/volume7/meinshausen06a/meinshausen06a.pdf>.
 	Romano, Yaniv and Patterson, Evan and Candes, Emmanuel (2019) <arXiv:1905.03222>.
 	Tung, Nguyen Thanh and Huang, Joshua Zhexue and Nguyen, Thuy Thi and Khan, Imran (2014) <doi:10.13140/2.1.2500.8002>.
-	Lopez, Roberto and Balsa-Canto, E. and Onate, E. (2008) <doi:10.1002/nme.2304>.
 License: GPL-3
 Encoding: UTF-8
 Depends:

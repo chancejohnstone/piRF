@@ -20,7 +20,7 @@
 ## make parallel; optimize when parallel is used vs not, based on R value...
 ## --------------------------
 
-#' implements RF prediction interval method in Tung, Huang, Nyugen, Khan 2014.
+#' Implements RF prediction interval method in Tung, Huang, Nyugen, Khan 2014.
 #'
 #' This function implements the feature bias and prediction bias methods outlined in Tung 2014.
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
@@ -37,15 +37,9 @@
 #' @param R number of RFs generated in feature bias stage of Tung 2014 prediction interval. Defualt is 10.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
+#' @param interval_type Type of prediction interval to generate.
+#' Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.
 #' @keywords internal
-#' @examples
-#' TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
-#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-#' intervals = TRUE, feature_num_trees = NULL,
-#' alpha = NULL, forest_type = "QRF", featureBias = TRUE, predictionBias = TRUE, R = NULL,
-#' num_threads = NULL)
-#' @noRd
-#bias reduction; choice for feature and/or prediction bias correction
 TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                     min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                     intervals = TRUE, feature_num_trees = NULL,
@@ -88,12 +82,10 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
   return(list(preds = rf$preds[,2], pred_intervals = rf$preds[,c(1,3)], weights = featureWeights))
 }
 
-#' generate quantile RF
+#' Generate quantile RF
 #'
-#' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
+#' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRF().
 #' @keywords internal
-#' @noRd
-#changes made to genRF; add to previous versions to maintain one function?
 genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
                   min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                   intervals = TRUE,
@@ -122,12 +114,10 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 
 }
 
-#' generate weights for RF through feature bias reduction method outlined in Tung 2014.
+#' Generate weights for RF through feature bias reduction method outlined in Tung 2014.
 #'
-#' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
+#' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRF().
 #' @keywords internal
-#' @noRd
-#call genRF in this function after sampling training data
 genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feature_num_trees = feature_num_trees,
                        min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                        intervals = TRUE, alpha = alpha, forest_type = "RF", importance = "permutation",
@@ -176,25 +166,15 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
   return(weights)
 }
 
-#' performs prediction debiasing from Tung 2014
+#' Performs prediction debiasing from Tung 2014
 #'
-#' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRf().
+#' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRF().
 #' @keywords internal
-#' @noRd
-#prediction bias correction; two stage random forest; takes first stage rf object as input
 predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                            min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                            intervals = TRUE,
                            alpha = alpha, forest_type = "QRF", weights = NULL,
                            num_threads = num_threads, interval_type = NULL){
-
-
-  #one sided intervals
-  #if(interval_type == "two-sided"){
-  #  alpha <- alpha
-  #} else {
-  #  alpha <- alpha*2
-  #}
 
   #one sided intervals
   if(interval_type == "two-sided"){
@@ -219,7 +199,6 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
 
   #get dependent variable
   dep <- names(train_data)[1]
-  #print(dep)
 
   #keeping inbag by default; get oob for each tree
   #getting oob index for each training data point
@@ -262,8 +241,6 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
 
   #bis corrected quantile predictions
   bias_correct_preds <- stage1_preds$predictions - mat_pred_bias
-
-  #print(bias_correct_preds)
 
   return(list(stage1rf = rf, stage2rf = rf2, bias = bias, preds = bias_correct_preds))
 

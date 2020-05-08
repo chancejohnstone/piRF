@@ -20,8 +20,9 @@
 ##
 ## --------------------------
 
-#' implements RF prediction interval method in Roy, Larocque 2019.
-#' Currently implemented is the quantile method with BOP intervals.
+#' implements RF prediction interval method in Roy, Larocque 2019. Helper function.
+#'
+#' Currently implemented is the quantile method with BOP intervals. Used inside rfint().
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
 #' @param train_data Training data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Matches ranger() requirements.
 #' @param pred_data Test data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Utilizes ranger::predict() to get prediction intervals for test data.
@@ -34,12 +35,9 @@
 #' @param calibrate calibrate prediction intervals based on out-of-bag performance. Adjusts alpha to get nominal coverage.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
+#' @param interval_type Type of prediction interval to generate.
+#' Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.
 #' @keywords internal
-#' @examples
-#' RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
-#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-#' intervals = TRUE, interval_method = "quantile", calibrate = FALSE, alpha = NULL, num_threads = num_threads)
-#' @noRd
 RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                   min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                   intervals = TRUE, interval_method = "quantile", calibrate = FALSE, alpha = NULL, num_threads = NULL,
@@ -95,12 +93,10 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
   return(list(preds = rf_preds, pred_intervals = rf$int, alpha = alpha))
 }
 
-#' generate BOP sets from Roy, Larocque 2019
+#' Generate BOP sets from Roy, Larocque 2019
 #'
 #' This function is primarily meant to be used within the RoyRF() function. All parameters are same as in RoyRF().
 #' @keywords internal
-#' @noRd
-#generates the BOP values for each prediction value
 genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
                    pred_data, train_data, num_threads = num_threads,
                    calibrate = calibrate){
@@ -189,15 +185,10 @@ genBOP <- function(rf, inbag = rf$inbag.counts, alpha = alpha,
   return(list(BOP = BOP, oobBOP = oobBOP, dep = dep))
 }
 
-#' generates BOP quantile prediction intervals from Roy, Larocque 2019.
+#' Generates BOP quantile prediction intervals from Roy, Larocque 2019.
 #'
 #' This function is primarily meant to be used within the RoyRF() function.
-#' @param BOP BOP object generated from genBOP() function.
 #' @keywords internal
-#' @examples
-#' genqInt <- function(BOP, alpha = alpha)
-#' @noRd
-#quantile prediction using BOP
 genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
 
   #one sided intervals
@@ -230,10 +221,7 @@ genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
 #' generates BOP HDI prediction intervals from Roy, Larocque 2019
 #'
 #' This function is primarily meant to be used within the RoyRF() function. Could ptentially result in non-contiguous intervals.
-#' @param BOP BOP object generated from genBOP() function.
 #' @keywords internal
-#' @noRd
-#HDI intervals using density estimation of BOP; outputs a list due to potential for HDI to be non-contiguous
 genHDInt <- function(BOP, alpha = alpha){
 
   #getting hdr function from hdrcde package
@@ -253,10 +241,7 @@ genHDInt <- function(BOP, alpha = alpha){
 #' generates BOP contiguous HDI prediction intervals from Roy, Larocque 2019
 #'
 #' This function is primarily meant to be used within the RoyRF() function.
-#' @param BOP BOP object generated from genBOP() function.
 #' @keywords internal
-#' @noRd
-#connects the noninterval HDI
 genCHDInt <- function(BOP, alpha = alpha){
   #prediction intervals based on BOP HDI; connects HDI; uses density estimation...
   hdi <- genHDInt(BOP, alpha = alpha)

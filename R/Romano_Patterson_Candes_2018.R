@@ -18,10 +18,9 @@
 ##
 ## --------------------------
 
-#' implements RF prediction interval using split conformal prediction as outlined in Romano, Patterson, Candes 2018.
+#' implements RF prediction interval using split conformal prediction as outlined in Romano, Patterson, Candes 2018. Helper function.
 #'
-#' This function implements split conformal prediction intervals for RFs.
-#' @param love Do you love cats? Defaults to TRUE.
+#' This function implements split conformal prediction intervals for RFs. Currently used in rfint().
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
 #' @param train_data Training data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Matches ranger() requirements.
 #' @param pred_data Test data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Utilizes ranger::predict() to get prediction intervals for test data.
@@ -32,17 +31,11 @@
 #' @param intervals Generate prediction intervals or not.
 #' @param alpha Significance level for prediction intervals.
 #' @param forest_type Determines what type of forest: regression forest vs. quantile regression forest. *Should not be an option...
-#' @param replace Sample with replacement, or not. Utilized for the two different variants outlined in Ghosal, Hooker 2018. Currently variant 2 not implemented.
-#' @param prop Proportion of training data to sample for each tree. Currently variant 2 not implemented.
-#' @param variant Choose which variant to use. Currently variant 2 not implemented.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
+#' @param interval_type Type of prediction interval to generate.
+#' Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.
 #' @keywords internal
 #' @import stats
-#' @examples
-#' CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
-#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-#' intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL)
-#' @noRd
 CQRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                  min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                  intervals = TRUE, alpha = NULL, forest_type = "RF", num_threads = NULL,

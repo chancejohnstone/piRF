@@ -117,7 +117,7 @@
 #'    segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
 #'       y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
 #' }
-#' par(par)
+#' par(opar)
 #' }
 #' @references
 #' \insertRef{breiman2001random}{piRF}

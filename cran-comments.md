@@ -16,3 +16,8 @@ Additional license not added because their code holds the same license (GPL-3).
 05-02-2020
 -Added C Johnstone, and H Zhang as cph in DESCRIPTION
 -Correctly reverted par() setting back to original after example
+
+05-08-2020
+-Corrected par() mistake; reverted par() setting back to original after example
+-Reduced references in documentation to seven; all methods explicitly used in package
+-Added documentation for each function in package

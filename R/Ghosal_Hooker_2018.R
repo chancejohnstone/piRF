@@ -12,15 +12,10 @@
 ## Email: cjohnsto@iastate.edu
 ##
 ## ---------------------------
-##
-## Notes:
-## multiple boosts functional; testing needs to occur; seems to be an issue with variance estimates
-## variant 2 implemented
-## --------------------------
 
-#' implements RF prediction interval method in Ghosal, Hooker 2018
+#' Implements RF prediction interval method in Ghosal, Hooker 2018. Helper function.
 #'
-#' This function implements variant one of the prediction interval methods in Ghosal, Hooker 2018.
+#' This function implements variant one and two of the prediction interval methods in Ghosal, Hooker 2018. Used inside rfint().
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
 #' @param train_data Training data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Matches ranger() requirements.
 #' @param pred_data Test data of class data.frame, matrix, dgCMatrix (Matrix) or gwaa.data (GenABEL). Utilizes ranger::predict() to get prediction intervals for test data.
@@ -34,14 +29,9 @@
 #' @param variant Choose which variant to use. Currently variant 2 not implemented.
 #' @param num_stages Number of boosting stages. Functional for >= 2; variance estimates need adjustment for variant 2.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
+#' @param interval_type Type of prediction interval to generate.
+#' Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.
 #' @keywords internal
-#' @examples
-#' GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = 500,
-#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-#' intervals = FALSE, alpha = NULL, forest_type = "RF",
-#' replace = TRUE, prop = 1, variant = 1,
-#' num_threads = num_threads)
-#' @noRd
 GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
                           min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                           intervals = FALSE, alpha = NULL, prop = NULL, variant = 1,
@@ -76,17 +66,10 @@ GhosalBoostRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, n
                      interval_type = interval_type)
 }
 
-#' generate stage 1 RF for Ghosal, Hooker RF implementation
+#' Generates stage 1 RF for Ghosal, Hooker RF implementation. Helper function.
 #'
-#' This function is primarily meant to be used within the GhosalBoostRF function. All parameters are same as in GhosalBoostRF().
+#' This function is primarily meant to be used within GhosalBoostRF().
 #' @keywords internal
-#' @examples
-#' genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
-#' min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-#' intervals = TRUE,
-#' alpha = alpha, forest_type = "RF", importance = "none" , weights = NULL,
-#' replace = replace, prop = prop, inbag = NULL, num_threads = num_threads)
-#' @noRd
 genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
                   min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                   intervals = TRUE,
@@ -103,12 +86,10 @@ genCombRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_t
 
 }
 
-#' generate stage 2 (and more) RF for Ghosal, Hooker RF implementation
+#' Generates stage 2 (and more) RF for Ghosal, Hooker RF implementation. Helper function.
 #'
-#' This function is primarily meant to be used within the GhosalBoostRF() function. All parameters are same as in GhosalBoostRF().
+#' Used within GhosalBoostRF().
 #' @keywords internal
-#' @noRd
-#boosting function
 boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
                        min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                        intervals = TRUE, alpha = alpha, weights = NULL, num_stages = 2,
@@ -187,24 +168,11 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
               inbag = rf$inbag.counts))
 }
 
-#' generate prediction intervals for Ghosal, Hooker 2018 implementation.
+#' Generate prediction intervals for Ghosal, Hooker 2018 implementation. Helper function.
 #'
-#' This function is primarily meant to be used within the GhosalBoostRF() function. All parameters are same as in GhosalBoostRF().
-#' @param love Do you love cats? Defaults to TRUE.
+#' This function is primarily meant to be used within GhosalBoostRF().
 #' @keywords internal
-#' @examples
-#' GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads)
-#' @noRd
-#get variance estimate
 GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threads = num_threads, interval_type = interval_type){
-  #add variance estimate procedure for variant 2; requires estimates, and inbag for each stage...
-
-  #one sided intervals
-  #if(interval_type == "two-sided"){
-  #  alpha <- alpha
-  #} else {
-  #  alpha <- alpha*2
-  #}
 
   #one sided intervals
   if(interval_type == "two-sided"){
@@ -218,8 +186,6 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
     alpha2 <- 1
   }
 
-
-
   #includes original rf
   num_stages <- length(boostRF$boostrf)
 
@@ -232,11 +198,10 @@ GHVar <- function(boostRF, train_data, pred_data, variant, dep, alpha, num_threa
   cov_est <- rep(0, times = pred_n)
 
   #needs to get predictions from boostRF
-  #maybe call this something different
   tree_preds <- boostRF$tree_preds
   num_trees <- ncol(tree_preds)
 
-  #test this; dont know which one is correct...
+  #further testing needed
   in_bag <- unlist(boostRF$inbag)
   dim(in_bag) <- c(dim(train_data)[1], num_trees)
   in_bag <- in_bag >= 1

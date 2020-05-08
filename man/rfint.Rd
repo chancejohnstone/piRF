@@ -141,7 +141,6 @@ length
 opar <- par(mfrow = c(2,2))
 
 #plotting intervals and predictions
-par(mfrow = c(2,2))
 for(i in 1:7){
    col <- ((test$pressure >= res$int[[i]][,1]) *
    (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
@@ -151,7 +150,7 @@ for(i in 1:7){
    segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
       y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
 }
-par(par)
+par(opar)
 }
 }
 \references{

@@ -27,14 +27,12 @@
 #' @param alpha nominal significance level. Defaults to 0.01.
 #' @param response_data response data of class data.frame. Must have names() attribute.
 #' @param tolerance tolerance allowed around nominal alpha. Default is 0.25.
-#' @param step_ratio ratio absolute difference between empirical oob coverage and nominal coverage to adjust when calibrating. Defaults to 0.618.
+#' @param step_percent ratio absolute difference between empirical oob coverage and nominal coverage to adjust when calibrating. Defaults to 0.618.
 #' @param undercoverage Allow undercoverage. Defaults to TRUE. Not currently implemented.
 #' @param method Method to calibrate prediction intervals with. Defaults to "quantile"). Current only "quantile" implemented.
 #' @param max_iter Maximum number of iterations. Defaults to 10.
 #' @keywords random forest, calibration, internal
-#' @examples
 #' calibrate <- function(oob, alpha = alpha, response_data, dep, tolerance = .025)
-#' @noRd
 calibrate <- function(oob, alpha = .1, response_data, tolerance = .025,
                       step_percent = .618, undercoverage = FALSE, method = "quantile",
                       max_iter = 10) {

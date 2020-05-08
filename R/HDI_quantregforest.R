@@ -5,7 +5,7 @@
 # Date First Created: 2019-09-13
 # Reference:  Zhu, Lin, Jiaxin Lu, and Yihong Chen. "HDI-Forest: Highest Density Interval Regression Forest." arXiv preprint arXiv:1905.10101 (2019).
 
-#' implements HDI RF prediction interval method in ...
+#' Implements HDI RF prediction interval method in Zhu 2019. Helper function.
 #'
 #' This function implements an HDI RF prediction interval method.
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
@@ -19,11 +19,6 @@
 #' @param replace Sample with replacement, or not. Utilized for the two different variants outlined in Ghosal, Hooker 2018. Currently variant 2 not implemented.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
 #' @keywords internal
-#' @examples
-#' HDI_quantregforest <- function(formula = NULL, train_data = NULL, test_data = NULL, alpha = NULL,
-#' num_tree = NULL, mtry = NULL, min_node_size = NULL, max_depth = NULL, replace = TRUE, verbose = FALSE,
-#' num_threads = NULL)
-#' @noRd
 HDI_quantregforest <- function(formula = NULL,
                                train_data = NULL,
                                test_data = NULL,
