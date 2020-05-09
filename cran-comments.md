@@ -21,3 +21,6 @@ Additional license not added because their code holds the same license (GPL-3).
 -Corrected par() mistake; reverted par() setting back to original after example
 -Reduced references in documentation to seven; all methods explicitly used in package
 -Added documentation for each function in package
+
+05-08-2020.2
+-Fixed keyword issues

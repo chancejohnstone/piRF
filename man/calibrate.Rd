@@ -33,19 +33,6 @@ calibrate(
 \item{max_iter}{Maximum number of iterations. Defaults to 10.}
 }
 \description{
-This function outputs a calibrated significance level based on coverage of prediction intervals generated using oob collections. Primarily for use in RoyRF(). Attempting to see which other methods could utilize this procedure.
+This function outputs a calibrated significance level based on coverage of prediction intervals generated using oob collections. Primarily for use in RoyRF().
 }
-\keyword{.025)}
-\keyword{<-}
-\keyword{=}
-\keyword{alpha}
-\keyword{alpha,}
-\keyword{calibrate}
-\keyword{calibration,}
-\keyword{dep,}
-\keyword{forest,}
-\keyword{function(oob,}
 \keyword{internal}
-\keyword{random}
-\keyword{response_data,}
-\keyword{tolerance}

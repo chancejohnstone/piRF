@@ -22,7 +22,7 @@
 
 #' calibrate()
 #'
-#' This function outputs a calibrated significance level based on coverage of prediction intervals generated using oob collections. Primarily for use in RoyRF(). Attempting to see which other methods could utilize this procedure.
+#' This function outputs a calibrated significance level based on coverage of prediction intervals generated using oob collections. Primarily for use in RoyRF().
 #' @param oob collection of oob predictions for training data (in list form).
 #' @param alpha nominal significance level. Defaults to 0.01.
 #' @param response_data response data of class data.frame. Must have names() attribute.
@@ -31,8 +31,7 @@
 #' @param undercoverage Allow undercoverage. Defaults to TRUE. Not currently implemented.
 #' @param method Method to calibrate prediction intervals with. Defaults to "quantile"). Current only "quantile" implemented.
 #' @param max_iter Maximum number of iterations. Defaults to 10.
-#' @keywords random forest, calibration, internal
-#' calibrate <- function(oob, alpha = alpha, response_data, dep, tolerance = .025)
+#' @keywords internal
 calibrate <- function(oob, alpha = .1, response_data, tolerance = .025,
                       step_percent = .618, undercoverage = FALSE, method = "quantile",
                       max_iter = 10) {
