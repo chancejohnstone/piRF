@@ -18,10 +18,23 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Introduction
+```{r, echo = FALSE, results="hide", message=FALSE, warning=FALSE}
+library(badger)
+```
 
-<!-- badges: start -->
-<!-- badges: end -->
+```{r, echo = FALSE, prompt=FALSE, results='asis', comment=""}
+
+cat(
+
+  "[![](https://www.r-pkg.org/badges/version/piRF?color=orange)](https://cran.r-project.org/package=piRF)",
+  "[![](http://cranlogs.r-pkg.org/badges/grand-total/piRF?color=blue)](https://cran.r-project.org/package=piRF)"
+  #badge_cran_release("piRF", "orange"),
+  #badge_cran_download("piRF", "grand-total", "blue")
+  
+)
+```
+
+## Introduction
 
 The goal of *piRF* is to implement multiple state-of-the art random forest prediction interval methodologies in one complete package. Currently, the methods implemented can only be utilized within isolated packages, or the authors have not made a package publicly available. The package itself utilizes the functionality provided by the *ranger* package. 
 

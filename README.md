@@ -3,17 +3,23 @@ piRF - Prediction Intervals for Random Forests
 Chancellor Johnstone and Haozhe Zhang
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-Introduction
-------------
 
-<!-- badges: start -->
-<!-- badges: end -->
-The goal of *piRF* is to implement multiple state-of-the art random forest prediction interval methodologies in one complete package. Currently, the methods implemented can only be utilized within isolated packages, or the authors have not made a package publicly available. The package itself utilizes the functionality provided by the *ranger* package.
+[![](https://www.r-pkg.org/badges/version/piRF?color=orange)](https://cran.r-project.org/package=piRF)
+[![](http://cranlogs.r-pkg.org/badges/grand-total/piRF?color=blue)](https://cran.r-project.org/package=piRF)
 
-Installation
-------------
+## Introduction
 
-You can install the released version of *piRF* from [CRAN](https://CRAN.R-project.org) with:
+The goal of *piRF* is to implement multiple state-of-the art random
+forest prediction interval methodologies in one complete package.
+Currently, the methods implemented can only be utilized within isolated
+packages, or the authors have not made a package publicly available. The
+package itself utilizes the functionality provided by the *ranger*
+package.
+
+## Installation
+
+You can install the released version of *piRF* from
+[CRAN](https://CRAN.R-project.org) with:
 
 ``` r
 install.packages("piRF")
@@ -26,12 +32,16 @@ And the development version from [GitHub](https://github.com/) with:
 devtools::install_github("chancejohnstone/piRF")
 ```
 
-Example
--------
+## Example
 
-This is a basic example which utilizes the *airfoil* dataset included with *piRF*. The dataset comes from [UCI Archive](https://archive.ics.uci.edu/ml/datasets/Airfoil+Self-Noise#). The NASA data set comprises different size NACA 0012 airfoils at various wind tunnel speeds and angles of attack.
+This is a basic example which utilizes the *airfoil* dataset included
+with *piRF*. The dataset comes from [UCI
+Archive](https://archive.ics.uci.edu/ml/datasets/Airfoil+Self-Noise#).
+The NASA data set comprises different size NACA 0012 airfoils at various
+wind tunnel speeds and angles of attack.
 
-The follwoing functions are not exported by *piRF* but are used for this example.
+The follwoing functions are not exported by *piRF* but are used for this
+example.
 
 ``` r
 library(piRF)
@@ -62,7 +72,8 @@ getCoverage <- function(x, response){
 }
 ```
 
-Prediction intervals are generated for each of the methods implemented using train and test datasets constructed from the *airfoil* data.
+Prediction intervals are generated for each of the methods implemented
+using train and test datasets constructed from the *airfoil* data.
 
 ``` r
 method_vec <- c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal")
@@ -82,23 +93,29 @@ res <- rfint(pressure ~ . , train_data = train, test_data = test,
              num_threads = 2)
 ```
 
-In this example, the *num\_threads* option identifies the use of two cores for parallel processing. The default is to use all available cores. The *concise* option allows for the output of predictions for the test observations.
+In this example, the *num\_threads* option identifies the use of two
+cores for parallel processing. The default is to use all available
+cores. The *concise* option allows for the output of predictions for the
+test observations.
 
-Below are the coverage rates and average prediction interval lengths using the test dataset. Both are important characteristics of prediction intervals.
+Below are the coverage rates and average prediction interval lengths
+using the test dataset. Both are important characteristics of prediction
+intervals.
 
 ``` r
 #empirical coverage, and average prediction interval length for each method
 coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
 coverage
 #>  quantile     Zhang      Tung    Romano       Roy       HDI    Ghosal 
-#> 0.8947368 0.8947368 0.9210526 0.9210526 0.9473684 0.9473684 0.9736842
+#> 0.8947368 0.8947368 0.9736842 0.8684211 0.9210526 0.9210526 0.9736842
 length <- sapply(res$int, FUN = getPILength)
 length
 #>  quantile     Zhang      Tung    Romano       Roy       HDI    Ghosal 
-#> 10.233720  7.035656  7.810820 10.578972 11.789397  9.895526  9.097531
+#> 10.233720  7.035656 10.252380 10.845905 11.893628  9.989026  9.048103
 ```
 
-Below are plots of the resulting prediction intervals generated for each method.
+Below are plots of the resulting prediction intervals generated for each
+method.
 
 ``` r
 #plotting intervals and predictions
@@ -114,25 +131,78 @@ for(i in 1:7){
 }
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-4-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-6-2.png" width="100%" />
 
-If you find any issues with the package, or have suggestions for improvements, please let us know.
+If you find any issues with the package, or have suggestions for
+improvements, please let us know.
 
-References
-----------
+\#\#References
 
-Breiman, Leo. 2001. “Random Forests.” *Machine Learning* 45 (1). Springer: 5–32. <https://link.springer.com/article/10.1023/A:1010933404324>.
+<div id="refs" class="references hanging-indent">
 
-Ghosal, Indrayudh, and Giles Hooker. 2018. “Boosting Random Forests to Reduce Bias; One-Step Boosted Forest and Its Variance Estimate.” *ArXiv Preprint*. <https://arxiv.org/pdf/1803.08000.pdf>.
+<div id="ref-breiman2001random">
 
-Meinshausen, Nicolai. 2006. “Quantile Regression Forests.” *Journal of Machine Learning Research* 7 (Jun): 983–99. <http://www.jmlr.org/papers/volume7/meinshausen06a/meinshausen06a.pdf>.
+Breiman, Leo. 2001. “Random Forests.” *Machine Learning* 45 (1): 5–32.
+<https://link.springer.com/article/10.1023/A:1010933404324>.
 
-Romano, Yaniv, Evan Patterson, and Emmanuel Candes. 2019. “Conformalized Quantile Regression.” *ArXiv Preprint*. <https://arxiv.org/pdf/1905.03222v1.pdf>.
+</div>
 
-Roy, Marie-Hélène, and Denis Larocque. 2019. “Prediction Intervals with Random Forests.” *Statistical Methods in Medical Research*. SAGE Publications Sage UK: London, England. <https://doi.org/10.1177/0962280219829885>.
+<div id="ref-ghosal2018boosting">
 
-Tung, Nguyen Thanh, Joshua Zhexue Huang, Thuy Thi Nguyen, and Imran Khan. 2014. “Bias-Corrected Quantile Regression Forests for High-Dimensional Data.” In *2014 International Conference on Machine Learning and Cybernetics*, 1:1–6. IEEE. <https://link.springer.com/article/10.1007/s10994-014-5452-1>.
+Ghosal, Indrayudh, and Giles Hooker. 2018. “Boosting Random Forests to
+Reduce Bias; One-Step Boosted Forest and Its Variance Estimate.” *arXiv
+Preprint*. <https://arxiv.org/pdf/1803.08000.pdf>.
 
-Zhang, Haozhe, Joshua Zimmerman, Dan Nettleton, and Daniel J. Nordman. 2019. “Random Forest Prediction Intervals.” *The American Statistician*. Taylor & Francis, 1–15. <https://doi.org/10.1080/00031305.2019.1585288>.
+</div>
 
-Zhu, Lin, Jiaxin Lu, and Yihong Chen. 2019. “HDI-Forest: Highest Density Interval Regression Forest.” *ArXiv Preprint*. <https://arxiv.org/pdf/1905.10101.pdf>.
+<div id="ref-meinshausen2006quantile">
+
+Meinshausen, Nicolai. 2006. “Quantile Regression Forests.” *Journal of
+Machine Learning Research* 7 (Jun): 983–99.
+<http://www.jmlr.org/papers/volume7/meinshausen06a/meinshausen06a.pdf>.
+
+</div>
+
+<div id="ref-romano2019conformalized">
+
+Romano, Yaniv, Evan Patterson, and Emmanuel Candes. 2019. “Conformalized
+Quantile Regression.” *arXiv Preprint*.
+<https://arxiv.org/pdf/1905.03222v1.pdf>.
+
+</div>
+
+<div id="ref-roy2019prediction">
+
+Roy, Marie-Hélène, and Denis Larocque. 2019. “Prediction Intervals with
+Random Forests.” *Statistical Methods in Medical Research*.
+<https://doi.org/10.1177/0962280219829885>.
+
+</div>
+
+<div id="ref-tung2014bias">
+
+Tung, Nguyen Thanh, Joshua Zhexue Huang, Thuy Thi Nguyen, and Imran
+Khan. 2014. “Bias-Corrected Quantile Regression Forests for
+High-Dimensional Data.” In *2014 International Conference on Machine
+Learning and Cybernetics*, 1:1–6. IEEE.
+<https://link.springer.com/article/10.1007/s10994-014-5452-1>.
+
+</div>
+
+<div id="ref-zhang2019random">
+
+Zhang, Haozhe, Joshua Zimmerman, Dan Nettleton, and Daniel J. Nordman.
+2019. “Random Forest Prediction Intervals.” *The American Statistician*,
+1–15. <https://doi.org/10.1080/00031305.2019.1585288>.
+
+</div>
+
+<div id="ref-zhu2019hdi">
+
+Zhu, Lin, Jiaxin Lu, and Yihong Chen. 2019. “HDI-Forest: Highest Density
+Interval Regression Forest.” *arXiv Preprint*.
+<https://arxiv.org/pdf/1905.10101.pdf>.
+
+</div>
+
+</div>
