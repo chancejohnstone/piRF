@@ -136,7 +136,7 @@ for(i in 1:7){
 If you find any issues with the package, or have suggestions for
 improvements, please let us know.
 
-\#\#References
+## References
 
 <div id="refs" class="references hanging-indent">
 
