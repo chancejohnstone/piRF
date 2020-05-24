@@ -4,6 +4,8 @@ Chancellor Johnstone and Haozhe Zhang
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+<img src="piRF.png" align="right" height="120"/>
+
 [![](https://www.r-pkg.org/badges/version/piRF?color=orange)](https://cran.r-project.org/package=piRF)
 [![](http://cranlogs.r-pkg.org/badges/grand-total/piRF?color=blue)](https://cran.r-project.org/package=piRF)
 

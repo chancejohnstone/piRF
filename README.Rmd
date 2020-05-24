@@ -9,6 +9,8 @@ nocite: |
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+<img src="piRF.png" align="right" height="120"/>
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -22,6 +24,7 @@ knitr::opts_chunk$set(
 library(badger)
 ```
 
+
 ```{r, echo = FALSE, prompt=FALSE, results='asis', comment=""}
 
 cat(
@@ -33,6 +36,7 @@ cat(
   
 )
 ```
+
 
 ## Introduction
 
