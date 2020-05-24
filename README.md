@@ -40,7 +40,7 @@ Archive](https://archive.ics.uci.edu/ml/datasets/Airfoil+Self-Noise#).
 The NASA data set comprises different size NACA 0012 airfoils at various
 wind tunnel speeds and angles of attack.
 
-The follwoing functions are not exported by *piRF* but are used for this
+The following functions are not exported by *piRF* but are used for this
 example.
 
 ``` r
