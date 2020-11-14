@@ -20,13 +20,13 @@
 #' The seven methods implemented are cited in the References section.
 #' Additional information can be found within those references.
 #' Each of these methods are implemented by utilizing the ranger package.
-#' For \code{method = "Zhang"}, prediction intervals are generated using out-of-bag residuals.
-#' \code{method = "Romano"} utilizes a split-conformal approach.
-#' \code{method = "Roy"} uses a bag-of-predictors approach.
-#' \code{method = "Ghosal"} performs boosting to reduce bias in the random forest, and estimates variance.
+#' For \code{method = "oob"}, prediction intervals are generated using out-of-bag residuals.
+#' \code{method = "cqrf"} utilizes a split-conformal approach.
+#' \code{method = "bop"} uses a bag-of-predictors approach.
+#' \code{method = "brf"} performs boosting to reduce bias in the random forest, and estimates variance.
 #' The authors provide multiple variants to their methodology.
-#' \code{method = "Tung"} debiases feature selection and prediction. Prediction intervals are generated using quantile regression forests.
-#' \code{method = "HDI"} delivers prediction intervals through highest-density interval regression forests.
+#' \code{method = "bcqrf"} debiases feature selection and prediction. Prediction intervals are generated using quantile regression forests.
+#' \code{method = "hdi"} delivers prediction intervals through highest-density interval regression forests.
 #' \code{method = "quantile"} utilizes quantile regression forests.
 #'
 #' @author Chancellor Johnstone
@@ -34,25 +34,25 @@
 #' @param formula Object of class formula or character describing the model to fit. Interaction terms supported only for numerical variables.
 #' @param train_data Training data of class data.frame.
 #' @param test_data Test data of class data.frame. Utilizes ranger::predict() to produce prediction intervals for test data.
-#' @param method Choose what method to generate RF prediction intervals. Options are \code{method = c("Zhang", "quantile", "Romano", "Ghosal", "Roy", "Tung", "HDI")}. Defaults to \code{method = "Zhang"}.
+#' @param method Choose what method to generate RF prediction intervals. Options are \code{method = c("oob", "quantile", "cqrf", "brf", "bop", "bcqrf", "hdi")}. Defaults to \code{method = "oob"}.
 #' @param alpha Significance level for prediction intervals. Defaults to \code{alpha = 0.1}.
 #' @param num_trees Number of trees used in the random forest.
 #' @param min_node_size Minimum number of observations before split at a node.
 #' @param m_try Number of variables to randomly select from at each split.
 #' @param concise If  concise = TRUE, only predictions output. Defaults to \code{concise = FALSE}.
 #' @param seed Seed for random number generation. Currently not utilized.
-#' @param prop Proportion of training data to sample for each tree. Only for \code{method = "Ghosal"}.
+#' @param prop Proportion of training data to sample for each tree. Only for \code{method = "brf"}.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
-#' @param symmetry True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only \code{method = "Zhang"}. Defaults to \code{symmetry = TRUE}.
-#' @param calibrate If \code{calibrate = TRUE}, intervals are calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for \code{method = "Roy"}.
-#' @param Roy_method Interval method for \code{method = "Roy"}.
-#' Options are \code{Roy_method = c("quantile", "HDI", "CHDI")}.
-#' @param variant Choose which variant to use. Options are \code{method = c("1", "2")}. Only for \code{method = "Ghosal"}.
-#' @param Ghosal_num_stages Number of total stages. Only for \code{method = "Ghosal"}.
-#' @param featureBias Remove feature bias. Only for \code{method = "Tung"}.
-#' @param predictionBias Remove prediction bias. Only for \code{method = "Tung"}.
-#' @param Tung_R Number of repetitions used in bias removal. Only for \code{method = "Tung"}.
-#' @param Tung_num_trees Number of trees used in bias removal. Only for \code{method = "Tung"}.
+#' @param symmetry True if constructing symmetric out-of-bag prediction intervals, False otherwise. Used only \code{method = "oob"}. Defaults to \code{symmetry = TRUE}.
+#' @param calibrate If \code{calibrate = TRUE}, intervals are calibrated to achieve nominal coverage. Currently uses quantiles to calibrate. Only for \code{method = "bop"}.
+#' @param Roy_method Interval method for \code{method = "bop"}.
+#' Options are \code{Roy_method = c("quantile", "hdi", "CHDI")}.
+#' @param variant Choose which variant to use. Options are \code{method = c("1", "2")}. Only for \code{method = "brf"}.
+#' @param Ghosal_num_stages Number of total stages. Only for \code{method = "brf"}.
+#' @param featureBias Remove feature bias. Only for \code{method = "bcqrf"}.
+#' @param predictionBias Remove prediction bias. Only for \code{method = "bcqrf"}.
+#' @param Tung_R Number of repetitions used in bias removal. Only for \code{method = "bcqrf"}.
+#' @param Tung_num_trees Number of trees used in bias removal. Only for \code{method = "bcqrf"}.
 #' @param interval_type Type of prediction interval to generate.
 #' Options are \code{method = c("two-sided", "lower", "upper")}. Default is  \code{method = "two-sided"}.
 #' @export
@@ -83,7 +83,7 @@
 #'
 #' #import airfoil self noise dataset
 #' data(airfoil)
-#' method_vec <- c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal")
+#' method_vec <- c("quantile", "oob", "bcqrf", "cqrf", "bop", "hdi", "brf")
 #' #generate train and test data
 #' ratio <- .975
 #' nrow <- nrow(airfoil)
@@ -139,7 +139,7 @@
 rfint <- function(formula = formula,
                   train_data = NULL,
                   test_data = NULL,
-                  method = "Zhang",
+                  method = "oob",
                   alpha = 0.1,
                   symmetry = TRUE,
                   seed = NULL,
@@ -166,6 +166,7 @@ rfint <- function(formula = formula,
     num_threads = num_threads
   }
 
+  #fix this
   if(foreach::getDoParWorkers() != num_threads){
     clust <- parallel::makeCluster(num_threads)
     doParallel::registerDoParallel(clust)
@@ -192,7 +193,7 @@ rfint <- function(formula = formula,
 
   #tracking list
   for(id in method){
-    if(id == "Zhang"){
+    if(id == "oob"){
       #Zhang call; no one sided
       res[[id]] <- rfinterval::rfinterval(formula = formula, train_data = train_data, test_data = test_data,
                         method = "oob", alpha = alpha, symmetry = symmetry, seed = seed,
@@ -200,7 +201,7 @@ rfint <- function(formula = formula,
                                              num.threads = num_threads))
       pred[[id]] <- res[[id]]$testPred
       int[[id]] <- res[[id]]$oob_interval
-    } else if (id == "Roy"){
+    } else if (id == "bop"){
       #Roy, Larocque call
       res[[id]] <- RoyRF(formula = formula, train_data = train_data, pred_data = test_data, intervals = TRUE,
                    interval_method = Roy_method, alpha = alpha, num_trees = num_trees,
@@ -208,7 +209,7 @@ rfint <- function(formula = formula,
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "Ghosal"){
+    } else if (id == "brf"){
       #Ghosal, Hooker call
       res[[id]] <- GhosalBoostRF(formula = formula, train_data = train_data, pred_data = test_data, num_trees = num_trees,
                            min_node_size = min_node_size, m_try = m_try, keep_inbag = TRUE,
@@ -218,7 +219,7 @@ rfint <- function(formula = formula,
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "Tung"){
+    } else if (id == "bcqrf"){
       #Tung call
       res[[id]] <- TungUbRF(formula = formula, train_data = train_data, pred_data = test_data,
                       num_trees = num_trees, feature_num_trees = Tung_num_trees,
@@ -228,7 +229,7 @@ rfint <- function(formula = formula,
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "Romano"){
+    } else if (id == "cqrf"){
       #Romano, Candes call
       res[[id]] <- CQRF(formula = formula, train_data = train_data, pred_data = test_data,
                   num_trees = num_trees, min_node_size = min_node_size,
@@ -237,7 +238,7 @@ rfint <- function(formula = formula,
 
       pred[[id]] <- res[[id]]$preds
       int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "HDI"){
+    } else if (id == "hdi"){
       #HDI forest call
       res[[id]] <- HDI_quantregforest(formula = formula,train_data = train_data, test_data = test_data,
                                 alpha = alpha, num_tree = num_trees, mtry = m_try,
@@ -272,7 +273,6 @@ rfint <- function(formula = formula,
     colnames(int[[id]]) <- c("lower", "upper")
   }
 
-  #currently save list name as method name e.g. int$Zhang
   if(concise) {
     #output preds
     return(list(int = int))
