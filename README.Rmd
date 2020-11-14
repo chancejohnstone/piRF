@@ -87,7 +87,7 @@ getCoverage <- function(x, response){
 Prediction intervals are generated for each of the methods implemented using train and test datasets constructed from the *airfoil* data.
 
 ```{r}
-method_vec <- c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal")
+method_vec <- c("quantile", "oob", "bcqrf", "cqrf", "bop", "hdi", "brf")
 #generate train and test data
 set.seed(2020)
 ratio <- .975

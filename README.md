@@ -78,7 +78,7 @@ Prediction intervals are generated for each of the methods implemented
 using train and test datasets constructed from the *airfoil* data.
 
 ``` r
-method_vec <- c("quantile", "Zhang", "Tung", "Romano", "Roy", "HDI", "Ghosal")
+method_vec <- c("quantile", "oob", "bcqrf", "cqrf", "bop", "hdi", "brf")
 #generate train and test data
 set.seed(2020)
 ratio <- .975
@@ -108,12 +108,12 @@ intervals.
 #empirical coverage, and average prediction interval length for each method
 coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
 coverage
-#>  quantile     Zhang      Tung    Romano       Roy       HDI    Ghosal 
+#>  quantile       oob     bcqrf      cqrf       bop       hdi       brf 
 #> 0.8947368 0.8947368 0.9736842 0.8684211 0.9210526 0.9210526 0.9736842
 length <- sapply(res$int, FUN = getPILength)
 length
-#>  quantile     Zhang      Tung    Romano       Roy       HDI    Ghosal 
-#> 10.233720  7.035656 10.252380 10.845905 11.893628  9.989026  9.048103
+#>  quantile       oob     bcqrf      cqrf       bop       hdi       brf 
+#> 10.233720  7.035656 10.252380 10.845905 11.893628  9.989026  9.070010
 ```
 
 Below are plots of the resulting prediction intervals generated for each
