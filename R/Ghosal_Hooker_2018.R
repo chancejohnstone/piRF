@@ -138,13 +138,14 @@ boostStage <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, 
     #add to boost rf list
     boost_list[[i]] <- rf2
 
-    #needs to be adjusted to allow for variant 2; keeps all stage estimates and inbag...
-
     #train_data predictions for MSE estimate
-    train_rf_sum <- train_rf_sum + predict(boost_list[[i]], train_data, num.threads = num_threads)$predictions
+    #oob vs. inbag?
+    #train_rf_sum <- train_rf_sum + predict(boost_list[[i]], train_data, num.threads = num_threads)$predictions
+    train_rf_sum <- train_rf_sum + boost_list[[i]]$predictions
 
     #combine original RF predictions with boosted predictions
-    train_preds <- predict(rf, train_data, num.threads = num_threads)$predictions + train_rf_sum
+    #train_preds <- predict(rf, train_data, num.threads = num_threads)$predictions + train_rf_sum
+    train_preds <- rf$predictions + train_rf_sum
 
     #sum all of the predictions from every boosted forest...
     rf_sum <- rf_sum + predict(boost_list[[i]], pred_data, num.threads = num_threads)$predictions
