@@ -87,7 +87,7 @@ HDI_quantregforest <- function(formula = NULL,
 
       node_match <- which(train_node[, tree] == test_node[ind, tree])
 
-      weight[node_match] <- weight[node_match] + inbag[[tree]][node_match] / sum(inbag[[tree]][node_match])
+      weight[node_match] <- weight[node_match] + inbag[[tree]][node_match] / max(1,sum(inbag[[tree]][node_match]))
     }
 
     weight <- weight / num_tree
