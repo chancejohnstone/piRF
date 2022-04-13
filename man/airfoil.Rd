@@ -4,7 +4,9 @@
 \name{airfoil}
 \alias{airfoil}
 \title{airfoil self noise dataset}
-\format{An object of class \code{data.frame} with 1503 rows and 6 columns.}
+\format{
+An object of class \code{data.frame} with 1503 rows and 6 columns.
+}
 \source{
 \href{https://archive.ics.uci.edu/ml/datasets/Airfoil+Self-Noise#}{UCI Archive}
 }

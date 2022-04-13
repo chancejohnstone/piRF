@@ -7,7 +7,6 @@
 genCombRF(
   formula = NULL,
   train_data = NULL,
-  pred_data = NULL,
   num_trees = num_trees,
   min_node_size = NULL,
   m_try = NULL,

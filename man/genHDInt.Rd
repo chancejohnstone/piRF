@@ -7,6 +7,6 @@
 genHDInt(BOP, alpha = alpha)
 }
 \description{
-This function is primarily meant to be used within the RoyRF() function. Could ptentially result in non-contiguous intervals.
+This function is primarily meant to be used within the RoyRF() function. Could potentially result in non-contiguous intervals.
 }
 \keyword{internal}

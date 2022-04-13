@@ -132,3 +132,129 @@ HDI_quantregforest <- function(formula = NULL,
   return(list(preds = preds, pred_intervals = pred_int, test_weights = test_weights))
 }
 
+#' @keywords internal
+fit_hdi <- function(formula = NULL,
+                    train_data = NULL,
+                    num_tree = NULL,
+                    mtry = NULL,
+                    min_node_size = NULL,
+                    max_depth = NULL,
+                    replace = TRUE,
+                    verbose = FALSE,
+                    num_threads = NULL){
+
+  ## sort the response of training data by ascending order
+  if (!is.null(formula)) {
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
+    train_data <- train_data[order(train_data[,1]), ]
+  } else {
+    stop("Error: Please give formula!")
+  }
+
+  ## Some checks of inputs (inherited from quantregforest package)
+  if(! class(train_data[,1]) %in% c("numeric","integer") )
+    stop("The response must be numeric ")
+
+  if(is.null(nrow(train_data[,-1])) || is.null(ncol(train_data[,-1])))
+    stop("The training data contains no data ")
+
+  if (any(is.na(train_data))) stop("NA not permitted in the training data")
+
+  ## train a random forest via ranger
+  rf <- ranger::ranger(formula = formula,
+                       data = train_data,
+                       num.trees = num_tree,
+                       mtry = mtry,
+                       min.node.size = min_node_size,
+                       max.depth = max_depth,
+                       replace = replace,
+                       sample.fraction = ifelse(replace, 1, 0.632),
+                       keep.inbag = TRUE,
+                       num.threads = num_threads)
+
+  rf$train_data <- train_data
+  rf$num_threads <- num_threads
+
+  return(rf)
+
+}
+
+#' @keywords internal
+predict_hdi <- function(model,
+                        test_data,
+                        alpha = .1,
+                        num_threads = NULL,
+                        verbose = FALSE){
+
+  ## extract inbag and terminalnode matrices
+  inbag <- model$inbag.counts
+  num_tree = model$num.trees
+  train_data <- model$train_data
+  train_node <- predict(model, train_data, type = "terminalNodes", num.threads = num_threads)$predictions
+  test_node <- predict(model, test_data, type = "terminalNodes", num.threads = num_threads)$predictions
+  preds <- predict(model, test_data)$predictions
+
+  ## Compute random forest weights for test instances
+  n_train <- nrow(train_data)
+  n_test <- nrow(test_data)
+  test_weights <- list()
+
+  pred_int <- data.frame(matrix(nrow = n_test, ncol = 2))
+  colnames(pred_int) <- c("lower", "upper")
+  rownames(pred_int) <- rownames(test_data)
+
+  for (ind in 1:n_test) {
+
+    weight = rep(0, n_train)
+
+    for (tree in 1:num_tree) {
+
+      node_match <- which(train_node[, tree] == test_node[ind, tree])
+
+      weight[node_match] <- weight[node_match] + inbag[[tree]][node_match] / max(1, sum(inbag[[tree]][node_match]))
+    }
+
+    weight <- weight / num_tree
+
+    test_weights[[ind]] <- weight
+
+    lower_index <- 1
+    upper_index <- 0
+    prob <- 0
+    lower_bound <- min(train_data[,1])
+    upper_bound <- max(train_data[,1])
+    interval_width <- upper_bound - lower_bound
+
+    ## Find the narrowest interval under the coverage constraint
+    for (lower_index in 1:n_train) {
+      while (upper_index < n_train & prob < 1- alpha) {
+        upper_index <- upper_index + 1
+        prob <- prob + weight[upper_index]
+      }
+      if (prob >= 1 - alpha) {
+        upper_index_optimal <- upper_index
+        if (train_data[upper_index_optimal,1] - train_data[lower_index,1] < interval_width) {
+          lower_bound <- train_data[lower_index,1]
+          upper_bound <- train_data[upper_index_optimal,1]
+          interval_width <- upper_bound - lower_bound
+        }
+      } else {
+        break
+      }
+      prob <- prob - weight[lower_index]
+    }
+
+    pred_int$lower[ind] <- lower_bound
+    pred_int$upper[ind] <- upper_bound
+
+    if (verbose == TRUE) {
+      print(pred_int[ind,])
+    }
+
+  }
+
+  model$int <- cbind(pred_int$lower, pred_int$upper)
+
+  return(list(preds = preds, pred_intervals = model$int, test_weights = test_weights))
+
+}

@@ -88,6 +88,7 @@ Prediction intervals are generated for each of the methods implemented using tra
 
 ```{r}
 method_vec <- c("quantile", "oob", "bcqrf", "cqrf", "bop", "hdi", "brf")
+
 #generate train and test data
 set.seed(2020)
 ratio <- .975
@@ -97,11 +98,15 @@ samp <- sample(1:nrow, size = n)
 train <- airfoil[samp,]
 test <- airfoil[-samp,]
 
-#generate prediction intervals
-res <- rfint(pressure ~ . , train_data = train, test_data = test,
-             method = method_vec,
-             concise= FALSE,
-             num_threads = 2)
+#generate fitted models
+res <- pirf(pressure ~ . , train_data = train,
+            method = method_vec,
+            concise= FALSE,
+            num_threads = 2,
+            alpha = .1)
+
+#generate prediction intervals from fitted models
+preds <- predict(res, test_data = test)
 ```
 
 In this example, the *num_threads* option identifies the use of two cores for parallel processing. The default is to use all available cores. The *concise* option allows for the output of predictions for the test observations.
@@ -110,9 +115,9 @@ Below are the coverage rates and average prediction interval lengths using the t
 
 ```{r}
 #empirical coverage, and average prediction interval length for each method
-coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
+coverage <- sapply(preds$int, FUN = getCoverage, response = test$pressure)
 coverage
-length <- sapply(res$int, FUN = getPILength)
+length <- sapply(preds$int, FUN = getPILength)
 length
 ```
 
@@ -121,14 +126,15 @@ Below are plots of the resulting prediction intervals generated for each method.
 ```{r}
 #plotting intervals and predictions
 par(mfrow = c(2,2))
-for(i in 1:7){
-   col <- ((test$pressure >= res$int[[i]][,1]) *
-   (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
-   plot(x = res$preds[[i]], y = test$pressure, pch = 20,
+for(i in 1:length(method_vec)){
+  #color based on empirical coverage
+  col <- ((test$pressure >= preds$int[[i]][,1]) * (test$pressure <= preds$int[[i]][,2])-1)*(-1)+1
+   
+  plot(x = preds$preds[[i]], y = test$pressure, pch = 20,
       col = "black", ylab = "true", xlab = "predicted", main = method_vec[i])
-   abline(a = 0, b = 1)
-   segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
-      y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
+  abline(a = 0, b = 1)
+  segments(x0 = preds$int[[i]][,1], x1 = preds$int[[i]][,2],
+           y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
 }
 ```
 

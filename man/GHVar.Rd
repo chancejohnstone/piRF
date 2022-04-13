@@ -6,10 +6,10 @@
 \usage{
 GHVar(
   boostRF,
-  train_data,
   pred_data,
+  preds,
+  tree_preds,
   variant,
-  dep,
   alpha,
   num_threads = num_threads,
   interval_type = interval_type

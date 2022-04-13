@@ -79,6 +79,7 @@ using train and test datasets constructed from the *airfoil* data.
 
 ``` r
 method_vec <- c("quantile", "oob", "bcqrf", "cqrf", "bop", "hdi", "brf")
+
 #generate train and test data
 set.seed(2020)
 ratio <- .975
@@ -88,14 +89,18 @@ samp <- sample(1:nrow, size = n)
 train <- airfoil[samp,]
 test <- airfoil[-samp,]
 
-#generate prediction intervals
-res <- rfint(pressure ~ . , train_data = train, test_data = test,
-             method = method_vec,
-             concise= FALSE,
-             num_threads = 2)
+#generate fitted models
+res <- pirf(pressure ~ . , train_data = train,
+            method = method_vec,
+            concise= FALSE,
+            num_threads = 2,
+            alpha = .1)
+
+#generate prediction intervals from fitted models
+preds <- predict(res, test_data = test)
 ```
 
-In this example, the *num\_threads* option identifies the use of two
+In this example, the *num_threads* option identifies the use of two
 cores for parallel processing. The default is to use all available
 cores. The *concise* option allows for the output of predictions for the
 test observations.
@@ -106,14 +111,14 @@ intervals.
 
 ``` r
 #empirical coverage, and average prediction interval length for each method
-coverage <- sapply(res$int, FUN = getCoverage, response = test$pressure)
+coverage <- sapply(preds$int, FUN = getCoverage, response = test$pressure)
 coverage
 #>  quantile       oob     bcqrf      cqrf       bop       hdi       brf 
-#> 0.8947368 0.8947368 0.9736842 0.8684211 0.9210526 0.9210526 0.9736842
-length <- sapply(res$int, FUN = getPILength)
+#> 0.8947368 0.8947368 0.8684211 0.8421053 0.8947368 0.8947368 0.9736842
+length <- sapply(preds$int, FUN = getPILength)
 length
 #>  quantile       oob     bcqrf      cqrf       bop       hdi       brf 
-#> 10.233720  7.035656 10.252380 10.845905 11.893628  9.989026  9.070010
+#> 10.233720  7.104409  7.344416  9.315674 11.683592  9.893316  9.090353
 ```
 
 Below are plots of the resulting prediction intervals generated for each
@@ -122,14 +127,15 @@ method.
 ``` r
 #plotting intervals and predictions
 par(mfrow = c(2,2))
-for(i in 1:7){
-   col <- ((test$pressure >= res$int[[i]][,1]) *
-   (test$pressure <= res$int[[i]][,2])-1)*(-1)+1
-   plot(x = res$preds[[i]], y = test$pressure, pch = 20,
+for(i in 1:length(method_vec)){
+  #color based on empirical coverage
+  col <- ((test$pressure >= preds$int[[i]][,1]) * (test$pressure <= preds$int[[i]][,2])-1)*(-1)+1
+   
+  plot(x = preds$preds[[i]], y = test$pressure, pch = 20,
       col = "black", ylab = "true", xlab = "predicted", main = method_vec[i])
-   abline(a = 0, b = 1)
-   segments(x0 = res$int[[i]][,1], x1 = res$int[[i]][,2],
-      y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
+  abline(a = 0, b = 1)
+  segments(x0 = preds$int[[i]][,1], x1 = preds$int[[i]][,2],
+           y1 = test$pressure, y0 = test$pressure, lwd = 1, col = col)
 }
 ```
 
@@ -140,16 +146,16 @@ improvements, please let us know.
 
 ## References
 
-<div id="refs" class="references hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 
-<div id="ref-breiman2001random">
+<div id="ref-breiman2001random" class="csl-entry">
 
 Breiman, Leo. 2001. “Random Forests.” *Machine Learning* 45 (1): 5–32.
 <https://link.springer.com/article/10.1023/A:1010933404324>.
 
 </div>
 
-<div id="ref-ghosal2018boosting">
+<div id="ref-ghosal2018boosting" class="csl-entry">
 
 Ghosal, Indrayudh, and Giles Hooker. 2018. “Boosting Random Forests to
 Reduce Bias; One-Step Boosted Forest and Its Variance Estimate.” *arXiv
@@ -157,7 +163,7 @@ Preprint*. <https://arxiv.org/pdf/1803.08000.pdf>.
 
 </div>
 
-<div id="ref-meinshausen2006quantile">
+<div id="ref-meinshausen2006quantile" class="csl-entry">
 
 Meinshausen, Nicolai. 2006. “Quantile Regression Forests.” *Journal of
 Machine Learning Research* 7 (Jun): 983–99.
@@ -165,7 +171,7 @@ Machine Learning Research* 7 (Jun): 983–99.
 
 </div>
 
-<div id="ref-romano2019conformalized">
+<div id="ref-romano2019conformalized" class="csl-entry">
 
 Romano, Yaniv, Evan Patterson, and Emmanuel Candes. 2019. “Conformalized
 Quantile Regression.” *arXiv Preprint*.
@@ -173,7 +179,7 @@ Quantile Regression.” *arXiv Preprint*.
 
 </div>
 
-<div id="ref-roy2019prediction">
+<div id="ref-roy2019prediction" class="csl-entry">
 
 Roy, Marie-Hélène, and Denis Larocque. 2019. “Prediction Intervals with
 Random Forests.” *Statistical Methods in Medical Research*.
@@ -181,7 +187,7 @@ Random Forests.” *Statistical Methods in Medical Research*.
 
 </div>
 
-<div id="ref-tung2014bias">
+<div id="ref-tung2014bias" class="csl-entry">
 
 Tung, Nguyen Thanh, Joshua Zhexue Huang, Thuy Thi Nguyen, and Imran
 Khan. 2014. “Bias-Corrected Quantile Regression Forests for
@@ -191,7 +197,7 @@ Learning and Cybernetics*, 1:1–6. IEEE.
 
 </div>
 
-<div id="ref-zhang2019random">
+<div id="ref-zhang2019random" class="csl-entry">
 
 Zhang, Haozhe, Joshua Zimmerman, Dan Nettleton, and Daniel J. Nordman.
 2019. “Random Forest Prediction Intervals.” *The American Statistician*,
@@ -199,7 +205,7 @@ Zhang, Haozhe, Joshua Zimmerman, Dan Nettleton, and Daniel J. Nordman.
 
 </div>
 
-<div id="ref-zhu2019hdi">
+<div id="ref-zhu2019hdi" class="csl-entry">
 
 Zhu, Lin, Jiaxin Lu, and Yihong Chen. 2019. “HDI-Forest: Highest Density
 Interval Regression Forest.” *arXiv Preprint*.

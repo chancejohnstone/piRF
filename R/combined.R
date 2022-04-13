@@ -136,7 +136,7 @@
 #'
 #' \insertRef{zhu2019hdi}{piRF}
 
-rfint <- function(formula = formula,
+rfint <- function(formula = NULL,
                   train_data = NULL,
                   test_data = NULL,
                   method = "oob",
@@ -159,130 +159,7 @@ rfint <- function(formula = formula,
                   concise = TRUE,
                   interval_type = "two-sided"){
 
-  #check for currently running parallel processes
-  if(is.null(num_threads)){
-    num_threads <- parallel::detectCores()
-  } else {
-    num_threads = num_threads
-  }
+  .Deprecated("pirf", msg = "rfint() is deprecated. Utilize pirf() to build your forest model(s) and predict.pirf() to get test predictions and prediction intervals.")
 
-  #fix this
-  if(foreach::getDoParWorkers() != num_threads){
-    clust <- parallel::makeCluster(num_threads)
-    doParallel::registerDoParallel(clust)
-  } else {
-
-  }
-
-  #list for all intervals; just gets all output for each interval
-  res <- list()
-  int <- list()
-  pred <- list()
-
-  #one sided intervals
-  if(interval_type == "two-sided"){
-    alpha1 <- alpha/2
-    alpha2 <- 1-alpha/2
-  } else if(interval_type == "upper"){
-    alpha1 <- 0
-    alpha2 <- 1-alpha
-  } else {
-    alpha1 <- alpha
-    alpha2 <- 1
-  }
-
-  #tracking list
-  for(id in method){
-    if(id == "oob"){
-      #Zhang call; no one sided
-      res[[id]] <- rfinterval::rfinterval(formula = formula, train_data = train_data, test_data = test_data,
-                        method = "oob", alpha = alpha, symmetry = symmetry, seed = seed,
-                        params_ranger = list(mtry = m_try, num.trees = num_trees, min.node.size = min_node_size,
-                                             num.threads = num_threads))
-      pred[[id]] <- res[[id]]$testPred
-      int[[id]] <- res[[id]]$oob_interval
-    } else if (id == "bop"){
-      #Roy, Larocque call
-      res[[id]] <- RoyRF(formula = formula, train_data = train_data, pred_data = test_data, intervals = TRUE,
-                   interval_method = Roy_method, alpha = alpha, num_trees = num_trees,
-                   num_threads = num_threads, m_try = m_try, interval_type = interval_type)
-
-      pred[[id]] <- res[[id]]$preds
-      int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "brf"){
-      #Ghosal, Hooker call
-      res[[id]] <- GhosalBoostRF(formula = formula, train_data = train_data, pred_data = test_data, num_trees = num_trees,
-                           min_node_size = min_node_size, m_try = m_try, keep_inbag = TRUE,
-                           intervals = TRUE, alpha = alpha, prop = prop,
-                           variant = variant, num_threads = num_threads, num_stages = Ghosal_num_stages,
-                           interval_type = interval_type)
-
-      pred[[id]] <- res[[id]]$preds
-      int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "bcqrf"){
-      #Tung call
-      res[[id]] <- TungUbRF(formula = formula, train_data = train_data, pred_data = test_data,
-                      num_trees = num_trees, feature_num_trees = Tung_num_trees,
-                      min_node_size = min_node_size, m_try = m_try, alpha = alpha, forest_type = "QRF",
-                      featureBias = featureBias, predictionBias = predictionBias,
-                      R = Tung_R, num_threads = num_threads, interval_type = interval_type)
-
-      pred[[id]] <- res[[id]]$preds
-      int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "cqrf"){
-      #Romano, Candes call
-      res[[id]] <- CQRF(formula = formula, train_data = train_data, pred_data = test_data,
-                  num_trees = num_trees, min_node_size = min_node_size,
-                  m_try = m_try, keep_inbag = TRUE, intervals = TRUE,
-                  num_threads = num_threads, alpha = alpha, interval_type = interval_type)
-
-      pred[[id]] <- res[[id]]$preds
-      int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "hdi"){
-      #HDI forest call
-      res[[id]] <- HDI_quantregforest(formula = formula,train_data = train_data, test_data = test_data,
-                                alpha = alpha, num_tree = num_trees, mtry = m_try,
-                                min_node_size = min_node_size, max_depth = 10,
-                                replace = TRUE, verbose = FALSE, num_threads = num_threads)
-
-      pred[[id]] <- res[[id]]$preds
-      int[[id]] <- res[[id]]$pred_intervals
-    } else if (id == "quantile"){
-      #quantile RF call
-      #intermediate step to get quantReg model
-      res[[id]] <- ranger::ranger(formula = formula, data = train_data,
-                    num.trees = num_trees, mtry = m_try, min.node.size = min_node_size,
-                    quantreg = TRUE, num.threads = num_threads)
-
-      #need to do this with predict for quantReg with ranger
-      pred[[id]] <- predict(res[[id]], test_data, type = "quantiles", quantiles = c(alpha1, 0.5, alpha2))$predictions
-      int[[id]] <- pred[[id]][,c(1,3)]
-      #save only median
-      pred[[id]] <- pred[[id]][,2]
-    } else {
-      stop(paste0(id, " is not a supported random forest prediction interval methodology"))
-    }
-
-    #one sided intervals; adjusts intervals based on on what sided interval is desired
-    if(interval_type == "upper"){
-      int[[id]][,1] <- -Inf
-    } else if(interval_type == "lower"){
-      int[[id]][,2] <- Inf
-    }
-
-    colnames(int[[id]]) <- c("lower", "upper")
-  }
-
-  if(concise) {
-    #output preds
-    return(list(int = int))
-  } else {
-    #output oreds and intervals
-    return(list(preds = pred, int = int))
-  }
-
-foreach::registerDoSEQ()
 }
-
-
 

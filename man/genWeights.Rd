@@ -7,7 +7,6 @@
 genWeights(
   formula = NULL,
   train_data = NULL,
-  pred_data = NULL,
   feature_num_trees = feature_num_trees,
   min_node_size = NULL,
   m_try = NULL,

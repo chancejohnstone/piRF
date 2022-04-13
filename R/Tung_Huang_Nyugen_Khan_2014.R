@@ -46,6 +46,8 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
                     alpha = NULL, forest_type = "QRF", featureBias = TRUE, predictionBias = TRUE, R = NULL,
                     num_threads = NULL, interval_type = NULL){
 
+  #browser()
+
   #parse formula
   if (!is.null(formula)) {
     train_data <- parse.formula(formula, data = train_data, env = parent.frame())
@@ -61,7 +63,8 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
   #get feature weights; calls genRF function
   featureWeights <- NULL
   if(featureBias == TRUE) {
-    featureWeights <- genWeights(formula = formula, train_data = train_data, pred_data = pred_data,
+    featureWeights <- genWeights(formula = formula,
+                                 train_data = train_data, pred_data = pred_data,
                                  feature_num_trees = feature_num_trees, min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
                                  forest_type = "QRF", importance = "permutation", R = R, num_threads = num_threads)
   }
@@ -86,10 +89,18 @@ TungUbRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_tr
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRF().
 #' @keywords internal
-genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees = num_trees,
-                  min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-                  intervals = TRUE,
-                  alpha = alpha, forest_type = "RF", importance = "none" , weights = NULL, num_threads = num_threads){
+genRF <- function(formula = NULL,
+                  train_data = NULL,
+                  pred_data = NULL,
+                  intervals = FALSE,
+                  num_trees = num_trees,
+                  min_node_size = NULL,
+                  m_try = NULL,
+                  keep_inbag = TRUE,
+                  forest_type = "RF",
+                  importance = "none" ,
+                  weights = NULL,
+                  num_threads = num_threads){
 
   #why does genRF need pred_data? it shouldn't if it is just generating a forest?
   #parse formula
@@ -118,10 +129,18 @@ genRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRF().
 #' @keywords internal
-genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feature_num_trees = feature_num_trees,
-                       min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
-                       intervals = TRUE, alpha = alpha, forest_type = "RF", importance = "permutation",
-                       R = R, num_threads = num_threads){
+genWeights <- function(formula = NULL,
+                       train_data = NULL,
+                       feature_num_trees = feature_num_trees,
+                       min_node_size = NULL,
+                       m_try = NULL,
+                       keep_inbag = TRUE,
+                       intervals = TRUE,
+                       alpha = alpha,
+                       forest_type = "RF",
+                       importance = "permutation",
+                       R = R,
+                       num_threads = num_threads){
 
   #define %dopar% locally
   `%dopar%` <- foreach::`%dopar%`
@@ -131,13 +150,13 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
 
   artif_features <- list()
 
-  #adjust this; currently includes an artifical response...
+  #adjust this; currently includes an artificial response...
   vi <- matrix(0, nrow = R, ncol = dim(train_data)[2]*2-1)
   n <- dim(train_data)[1]
 
   #sample from training data within a feature; R replications
   ranger <- ranger::ranger
-  vi <- foreach::foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger")) %dopar% {
+  vi <- foreach::foreach(i = 1:R, .combine = rbind, .export = c("genRF","ranger","parse.formula")) %dopar% {
     #need to remove dependent variable?
     artif_features[[i]] <- apply(train_data, FUN = sample, MARGIN = 2, size = n, replace = FALSE)
     colnames(artif_features[[i]]) <- paste0("a_", names(train_data))
@@ -146,10 +165,13 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
     artif_train_data <- cbind(train_data, artif_features[[i]])
 
     #retrieve variable importance from each replicate
-    vi[i, ] <- genRF(formula = formula, train_data = artif_train_data,
-                     pred_data = artif_train_data, intervals = FALSE,
-                     num_trees = feature_num_trees, min_node_size = min_node_size,
-                     m_try = m_try, forest_type = "QRF", importance = "permutation",
+    vi[i, ] <- genRF(formula = formula,
+                     train_data = artif_train_data,
+                     num_trees = feature_num_trees,
+                     min_node_size = min_node_size,
+                     m_try = m_try,
+                     forest_type = "QRF",
+                     importance = "permutation",
                      num_threads = num_threads)$variable.importance
     #return the variable importance
     vi
@@ -170,11 +192,20 @@ genWeights <- function(formula = NULL, train_data = NULL, pred_data = NULL, feat
 #'
 #' This function is primarily meant to be used within the TungUbRF() function. All parameters are same as in TungUbRF().
 #' @keywords internal
-predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NULL, num_trees = NULL,
-                           min_node_size = NULL, m_try = NULL, keep_inbag = TRUE,
+predictionUbRF <- function(rf,
+                           formula = NULL,
+                           train_data = NULL,
+                           pred_data = NULL,
+                           num_trees = NULL,
+                           min_node_size = NULL,
+                           m_try = NULL,
+                           keep_inbag = TRUE,
                            intervals = TRUE,
-                           alpha = alpha, forest_type = "QRF", weights = NULL,
-                           num_threads = num_threads, interval_type = NULL){
+                           alpha = alpha,
+                           forest_type = "QRF",
+                           weights = NULL,
+                           num_threads = num_threads,
+                           interval_type = "two-sided"){
 
   #one sided intervals
   if(interval_type == "two-sided"){
@@ -226,11 +257,15 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
   aug_train_data <- cbind(bias, train_data[,!drop])
 
   #stage 2
-  rf2 <- genRF(formula = bias ~. , train_data = aug_train_data,
-              pred_data = pred_data, intervals = FALSE,
-              num_trees = num_trees, min_node_size = min_node_size,
-              m_try = m_try, forest_type = forest_type, weights = weights, importance = "none", alpha = alpha,
-              num_threads = num_threads)
+  rf2 <- genRF(formula = bias ~. ,
+               train_data = aug_train_data,
+               num_trees = num_trees,
+               min_node_size = min_node_size,
+               m_try = m_try,
+               forest_type = forest_type,
+               weights = weights,
+               importance = "none",
+               num_threads = num_threads)
 
   #just need the median for this; median predicted bias...
   pred_bias <- predict(rf2, pred_data, type = "quantiles", quantiles = .5, num.threads = num_threads)
@@ -246,3 +281,119 @@ predictionUbRF <- function(rf, formula = NULL, train_data = NULL, pred_data = NU
 
 }
 
+#' @keywords internal
+fit_bcqrf <- function(formula = NULL,
+                      train_data = NULL,
+                      alpha = .1,
+                      interval_type = "two-sided",
+                      num_trees = NULL,
+                      min_node_size = NULL,
+                      m_try = NULL,
+                      keep_inbag = TRUE,
+                      feature_num_trees = 100,
+                      forest_type = "QRF",
+                      featureBias = TRUE,
+                      predictionBias = TRUE,
+                      R = NULL,
+                      num_threads = NULL){
+
+  #parse formula
+  if (!is.null(formula)) {
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
+    #orders train_data by response
+    #train_data <- train_data[order(train_data[,1]), ]
+  } else {
+    stop("Error: Please give formula!")
+  }
+
+  #get dependent variable
+  dep <- names(train_data)[1]
+
+  #get feature weights; calls genRF function
+  featureWeights <- NULL
+  if(featureBias == TRUE) {
+    featureWeights <- genWeights(formula = formula,
+                                 train_data = train_data,
+                                 feature_num_trees = feature_num_trees,
+                                 min_node_size = NULL,
+                                 m_try = NULL,
+                                 keep_inbag = TRUE,
+                                 forest_type = "QRF",
+                                 importance = "permutation",
+                                 R = R,
+                                 num_threads = num_threads)
+  }
+
+  #stage 1 rf generation
+  rf <- genRF(formula = formula,
+              train_data = train_data,
+              num_trees = num_trees,
+              min_node_size = min_node_size,
+              m_try = m_try,
+              forest_type = "QRF",
+              weights = featureWeights,
+              importance = "none",
+              num_threads = num_threads)
+
+  if(predictionBias == TRUE) {
+    rf <- predictionUbRF(rf,
+                         formula = formula,
+                         train_data = train_data,
+                         pred_data = train_data,
+                         num_trees = num_trees,
+                         min_node_size = NULL,
+                         m_try = NULL,
+                         keep_inbag = TRUE,
+                         intervals = TRUE,
+                         alpha = alpha,
+                         forest_type = "QRF",
+                         weights = featureWeights,
+                         num_threads = num_threads,
+                         interval_type = interval_type)
+  }
+
+  return(list(bcqrf = rf, preds = rf$preds[,2], pred_intervals = rf$preds[,c(1,3)], weights = featureWeights))
+
+}
+
+#' @keywords internal
+predict_bcqrf <- function(model,
+                          train_data = NULL,
+                          pred_data = NULL,
+                          intervals = TRUE,
+                          alpha = .1,
+                          num_threads = NULL,
+                          interval_type = "two-sided"){
+
+
+  #one sided intervals
+  if(interval_type == "two-sided"){
+    alpha1 <- alpha/2
+    alpha2 <- 1-alpha/2
+  } else if(interval_type == "upper"){
+    alpha1 <- 0
+    alpha2 <- 1-alpha
+  } else {
+    alpha1 <- alpha
+    alpha2 <- 1
+  }
+
+  #stage 1 predictions
+  stage1_preds <- predict(model$bcqrf$stage1rf, pred_data, type = "quantiles",
+                          quantiles = c(alpha1, .5, alpha2), num.threads = num_threads)
+
+  #predicted bias
+  pred_bias <- predict(model$bcqrf$stage2rf, pred_data, type = "quantiles",
+                       quantiles = .5, num.threads = num_threads)
+
+  dims <- dim(stage1_preds$predictions)
+
+  #repeating predicted bias to apply to quantile predictions
+  mat_pred_bias <- matrix(pred_bias$predictions, nrow = dims[1], ncol = dims[2], byrow = FALSE)
+
+  #bis corrected quantile predictions
+  bias_correct_preds <- stage1_preds$predictions - mat_pred_bias
+
+  return(list(preds = bias_correct_preds[,2], pred_intervals = bias_correct_preds[,c(1,3)]))
+
+}

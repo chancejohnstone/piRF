@@ -66,6 +66,7 @@ RoyRF <- function(formula = NULL, train_data = NULL, pred_data = NULL, num_trees
     #get BOP for each new prediction
     all_BOP <- genBOP(rf, train_data = train_data, pred_data = pred_data,
                       alpha = alpha, num_threads = num_threads, calibrate = calibrate)
+
     BOP <- all_BOP$BOP
     oobBOP <- all_BOP$oobBOP
     dep <- all_BOP$dep
@@ -220,7 +221,7 @@ genqInt <- function(BOP, alpha = alpha, interval_type = interval_type){
 
 #' generates BOP HDI prediction intervals from Roy, Larocque 2019
 #'
-#' This function is primarily meant to be used within the RoyRF() function. Could ptentially result in non-contiguous intervals.
+#' This function is primarily meant to be used within the RoyRF() function. Could potentially result in non-contiguous intervals.
 #' @keywords internal
 genHDInt <- function(BOP, alpha = alpha){
 
@@ -253,5 +254,79 @@ genCHDInt <- function(BOP, alpha = alpha){
   return(int)
 }
 
+#' @keywords internal
+fit_bop <- function(formula = NULL,
+                    train_data = NULL,
+                    num_trees = NULL,
+                    min_node_size = NULL,
+                    m_try = NULL,
+                    keep_inbag = TRUE,
+                    intervals = TRUE,
+                    num_threads = NULL){
+
+  #parse formula
+  if (!is.null(formula)) {
+    train_data <- parse.formula(formula, data = train_data, env = parent.frame())
+  } else {
+    stop("Error: Please give formula!")
+  }
+
+  rf <- ranger::ranger(formula, data = train_data, num.trees = num_trees,
+                       min.node.size = min_node_size, mtry = m_try,
+                       keep.inbag = keep_inbag, num.threads = num_threads)
+
+  rf$train_data <- train_data
+  rf$num_threads <- num_threads
+
+  return(rf)
+
+}
+
+#' @keywords internal
+predict_bop <- function(model,
+                        pred_data,
+                        interval_method = "quantile",
+                        calibrate = FALSE,
+                        alpha = .1,
+                        tolerance = NULL,
+                        step_percent = NULL,
+                        under = NULL,
+                        max_iter = NULL,
+                        interval_type = NULL,
+                        num_threads = NULL){
+
+  #predictions for test data
+  rf_preds <- predict(model, pred_data)$predictions
+
+  #get BOP for each new prediction
+  all_BOP <- genBOP(model, train_data = model$train_data, pred_data = pred_data,
+                    alpha = alpha, num_threads = model$num_threads, calibrate = calibrate)
+
+  BOP <- all_BOP$BOP
+  oobBOP <- all_BOP$oobBOP
+  dep <- all_BOP$dep
+
+  if (calibrate) {
+    #adjust alpha based on calibration; use calibrate() function
+    alpha <- calibrate(oobBOP, alpha = alpha, response_data = train_data[,dep], tolerance = tolerance,
+                       step_percent = step_percent, under = under, method = method,
+                       max_iter = max_iter)
+  }
+
+  if(interval_method == "quantile") {
+    int <- genqInt(BOP, alpha, interval_type = interval_type)
+  } else if (interval_method == "HDI") {
+    int <- genHDInt(BOP, alpha)
+  } else if (interval_method == "CHDI") {
+    int <- genCHDInt(BOP, alpha)
+  }
+
+  model$int <- int
+  model$BOP <- BOP
+  model$oobBOP <- oobBOP
+
+  return(list(preds = rf_preds, pred_intervals = model$int, alpha = alpha))
+
+}
 
 

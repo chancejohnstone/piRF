@@ -1,7 +1,7 @@
 Package: piRF
 Title: Prediction Intervals for Random Forests
-Version: 0.1.0
-Date: 2020-04-17
+Version: 0.2.0
+Date: 2022-04-13
 Authors@R: 
     c(person(given = "Chancellor",
 	     family = "Johnstone",
@@ -47,6 +47,6 @@ Suggests:
     ranger
 URL: http://github.com/chancejohnstone/piRF
 LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1
 Imports: Rdpack
 RdMacros: Rdpack
