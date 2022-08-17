@@ -30,7 +30,7 @@ library(badger)
 cat(
 
   "[![](https://www.r-pkg.org/badges/version/piRF?color=orange)](https://cran.r-project.org/package=piRF)",
-  "[![](http://cranlogs.r-pkg.org/badges/grand-total/piRF?color=blue)](https://cran.r-project.org/package=piRF)"
+  "[![](http://cranlogs.r-pkg.org/badges/last-month/piRF?color=blue)](https://cran.r-project.org/package=piRF)"
   #badge_cran_release("piRF", "orange"),
   #badge_cran_download("piRF", "grand-total", "blue")
   
@@ -40,7 +40,20 @@ cat(
 
 ## Introduction
 
-The goal of *piRF* is to implement multiple state-of-the art random forest prediction interval methodologies in one complete package. Currently, the methods implemented can only be utilized within isolated packages, or the authors have not made a package publicly available. The package itself utilizes the functionality provided by the *ranger* package. 
+The goal of *piRF* is to implement multiple state-of-the art random forest prediction interval methodologies in one complete package. Currently, the methods implemented can only be utilized within isolated packages, or the authors have not made a package publicly available. The package itself utilizes the functionality provided by the *ranger* package. If you utilize this package in any publications, please use the following citation:
+
+Johnstone C, Zhang H (2020). piRF: Prediction Intervals for Random Forests. R package version 0.1.0,
+<https://CRAN.R-project.org/package=piRF>.
+
+A BibTeX entry for LaTeX users is
+
+@Manual{,
+  title = {piRF: Prediction Intervals for Random Forests},
+  author = {Chancellor Johnstone and Haozhe Zhang},
+  year = {2020},
+  note = {R package version 0.1.0},
+  url = {https://CRAN.R-project.org/package=piRF},
+}
 
 ## Installation
 
@@ -84,7 +97,7 @@ getCoverage <- function(x, response){
 }
 ```
 
-Prediction intervals are generated for each of the methods implemented using train and test datasets constructed from the *airfoil* data.
+Prediction intervals are generated for each of the methods implemented using train and test data sets constructed from the *airfoil* data.
 
 ```{r}
 method_vec <- c("quantile", "oob", "bcqrf", "cqrf", "bop", "hdi", "brf")

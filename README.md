@@ -7,7 +7,7 @@ Chancellor Johnstone and Haozhe Zhang
 <img src="piRF.png" align="right" height="120"/>
 
 [![](https://www.r-pkg.org/badges/version/piRF?color=orange)](https://cran.r-project.org/package=piRF)
-[![](http://cranlogs.r-pkg.org/badges/grand-total/piRF?color=blue)](https://cran.r-project.org/package=piRF)
+[![](http://cranlogs.r-pkg.org/badges/last-month/piRF?color=blue)](https://cran.r-project.org/package=piRF)
 
 ## Introduction
 
@@ -16,7 +16,19 @@ forest prediction interval methodologies in one complete package.
 Currently, the methods implemented can only be utilized within isolated
 packages, or the authors have not made a package publicly available. The
 package itself utilizes the functionality provided by the *ranger*
-package.
+package. If you utilize this package in any publications, please use the
+following citation:
+
+Johnstone C, Zhang H (2020). piRF: Prediction Intervals for Random
+Forests. R package version 0.1.0,
+<https://CRAN.R-project.org/package=piRF>.
+
+A BibTeX entry for LaTeX users is
+
+(**Manual?**){, title = {piRF: Prediction Intervals for Random Forests},
+author = {Chancellor Johnstone and Haozhe Zhang}, year = {2020}, note =
+{R package version 0.1.0}, url =
+{<https://CRAN.R-project.org/package=piRF>}, }
 
 ## Installation
 
@@ -75,7 +87,7 @@ getCoverage <- function(x, response){
 ```
 
 Prediction intervals are generated for each of the methods implemented
-using train and test datasets constructed from the *airfoil* data.
+using train and test data sets constructed from the *airfoil* data.
 
 ``` r
 method_vec <- c("quantile", "oob", "bcqrf", "cqrf", "bop", "hdi", "brf")
@@ -114,11 +126,11 @@ intervals.
 coverage <- sapply(preds$int, FUN = getCoverage, response = test$pressure)
 coverage
 #>  quantile       oob     bcqrf      cqrf       bop       hdi       brf 
-#> 0.8947368 0.8947368 0.8684211 0.8421053 0.8947368 0.8947368 0.9736842
+#> 0.8947368 0.8947368 0.8684211 0.9210526 0.9210526 0.9210526 0.9736842
 length <- sapply(preds$int, FUN = getPILength)
 length
 #>  quantile       oob     bcqrf      cqrf       bop       hdi       brf 
-#> 10.233720  7.104409  7.344416  9.315674 11.683592  9.893316  9.090353
+#> 10.233720  7.003722  8.166471 10.958470 12.114255 10.048553  9.004183
 ```
 
 Below are plots of the resulting prediction intervals generated for each
