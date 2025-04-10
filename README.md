@@ -20,7 +20,7 @@ package. If you utilize this package in any publications, please use the
 following citation:
 
 Johnstone C, Zhang H (2020). piRF: Prediction Intervals for Random
-Forests. R package version 0.1.0.
+Forests. R package version 0.2.0-alpha.
 
 A BibTeX entry for LaTeX users is
 
