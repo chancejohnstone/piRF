@@ -20,26 +20,18 @@ package. If you utilize this package in any publications, please use the
 following citation:
 
 Johnstone C, Zhang H (2020). piRF: Prediction Intervals for Random
-Forests. R package version 0.1.0,
-<https://CRAN.R-project.org/package=piRF>.
+Forests. R package version 0.1.0.
 
 A BibTeX entry for LaTeX users is
 
-(**Manual?**){, title = {piRF: Prediction Intervals for Random Forests},
-author = {Chancellor Johnstone and Haozhe Zhang}, year = {2020}, note =
-{R package version 0.1.0}, url =
-{<https://CRAN.R-project.org/package=piRF>}, }
+@article{johnstonepirf,
+  title={piRF-Prediction Intervals for Random Forests},
+  author={Johnstone, Chancellor and Zhang, Haozhe}
+}
 
 ## Installation
 
-You can install the released version of *piRF* from
-[CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("piRF")
-```
-
-And the development version from [GitHub](https://github.com/) with:
+You can install the development version from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
