@@ -10,7 +10,7 @@
 ## Date Created: 2019-09-09
 ##
 ## Copyright (c) Chancellor Johnstone, 2019
-## Email: cjohnsto@iastate.edu
+## Email: chance.johnstone@gmail.com
 ##
 ## ---------------------------
 ##
@@ -33,7 +33,7 @@
 #' @param intervals Generate prediction intervals or not.
 #' @param featureBias perform feature bias step.
 #' @param predictionBias perform prediction bias.
-#' @param feature_num_tree number of trees to be used in ech random forest generated for feature bias step.
+#' @param feature_num_trees number of trees to be used in each random forest generated for feature bias step.
 #' @param R number of RFs generated in feature bias stage of Tung 2014 prediction interval. Defualt is 10.
 #' @param alpha Significance level for prediction intervals.
 #' @param num_threads The number of threads to use in parallel. Default is the current number of cores.
